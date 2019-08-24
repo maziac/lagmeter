@@ -4,8 +4,7 @@
             "name": "Mac",
             "includePath": [
                 "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/tools/**",
-                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/**",
-                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/libraries/**"
+                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/**"
             ],
             "forcedInclude": [
                 "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h"
