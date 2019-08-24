@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/tools/**",
+                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/**",
+                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/libraries/**"
+            ],
+            "forcedInclude": [
+                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h"
+            ],
+            "macFrameworkPath": [
+                "/System/Library/Frameworks",
+                "/Library/Frameworks"
+            ],
+            "intelliSenseMode": "clang-x64",
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}

@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:uno",
+    "sketch": "LagMeter.ino",
+    "port": "/dev/cu.usbserial-1460"
+}
