@@ -5,11 +5,29 @@
 
 /*
 
-Own measurements:
-
 Reed Relais SIL 7271-D 5V:
+From own measurements:
 - Switch bouncing: 40us
 - Delay: 5V Out to relais switching: < 250us
+
+
+LCD keypad shield, keys:
+  x = analogRead (0);
+  if (x < 60) {
+    // Right
+  }
+  else if (x < 200) {
+    // Up
+  }
+  else if (x < 400) {
+    // Down
+  }
+  else if (x < 600) {
+    // Left
+  }
+  else if (x < 800) {
+  	// Select");
+  }
 
 */
 
@@ -48,21 +66,50 @@ void setup() {
 }
 
 
+// Defines for the available LCD keys.
+enum {
+  LCD_KEY_NONE,
+  LCD_KEY_SELECT,
+  LCD_KEY_LEFT,
+  LCD_KEY_RIGHT,
+  LCD_KEY_UP,
+  LCD_KEY_DOWN,
+  
+};
 
-// Check if the start key was pressed.
-bool getStartKey() {
+
+// Returns the pressed key (or LCD_KEY_NONE).
+int getLcdKey() {
+  int x = analogRead(0);
+  // Return immediately if nothing is pressed
+  if (x >= 800) 
+    return LCD_KEY_NONE;
   
-  int x; //  variable
-  x = analogRead (0); // assign 'x' AnalogueInput (Shield's buttons)
-  if (x > 600 && x < 800 ) // SELECT Button
-    return true;
-  return false;
-  
-  int value = digitalRead(2);
-  //Serial.println(value);
-  
-  return (value == LOW);
+  // Some key has been pressed
+  delay(100);	// poor man's debounce
+
+  // Wait until released
+  while(analogRead(0) < 800);
+
+  delay(100); // debounce
+ 
+  // Return
+  if (x < 60)
+    return LCD_KEY_RIGHT;
+  if (x < 200) 
+    return LCD_KEY_UP;
+  if (x < 400) 
+    return LCD_KEY_DOWN;
+  if (x < 600) 
+    return LCD_KEY_LEFT;
+  return LCD_KEY_SELECT;
 }
+
+
+// Define used Keys.
+const int KEY_START = LCD_KEY_DOWN;
+const int KEY_TEST = LCD_KEY_LEFT;
+
 
 
 // Stabilize time for photo sensor in ms.
@@ -115,11 +162,33 @@ void waitOnPhotoSensorChange(int lightValue) {
 }
 
 
+// State: test phot sensor.
+// The photo sensor input is read and printed to the LCD.
+// Press "KEY_TEST" to leave.
+void testPhotoSensor() {
+  lcd.clear();
+  lcd.print("Test sensor...");
+  lcd.setCursor(0,1);
+  lcd.print("(Max=1023)");
+  while(getLcdKey() == LCD_KEY_NONE) {
+  	// Read photo sensor 
+	int value = analogRead(INPUT_PIN);
+    lcd.setCursor(11, 1);
+    lcd.print(value);
+    lcd.print("   ");
+    delay(100);
+  }
+  lcd.clear();
+}
+
+
 
 // The internal states.
 enum {
-  STATE_IDLE,
-  STATE_MEASURING
+  STATE_IDLE,			// Waits for input.
+  STATE_CALIBRATING,	// Calibrates the phot sensor input.
+  STATE_MEASURING,		// Starts to measure a few cycles.
+  STATE_TEST			// Tests the phot sensor.
 };
 
 int state = STATE_IDLE;
@@ -139,12 +208,29 @@ void loop() {
   out = ~out;
   return;
   */
+  
+  if(getLcdKey() == KEY_TEST)
+	testPhotoSensor();
+  return;
 
+  /*
   // Statemachine 
   switch(state) {
     case STATE_IDLE:
       //delay(200);
-      if(getStartKey()) {
+      if(getLcdKey() == KEY_START) {
+        // Start the measurement
+        state = STATE_MEASURING;
+        measureCycle = 1;
+        lcd.clear();
+        // Print cycle
+        lcd.print("Testing...");
+      }
+      break;    
+    
+    case STATE_CALIBRATING:
+      //delay(200);
+      if(getLcdKey() == KEY_START) {
         // Start the measurement
         state = STATE_MEASURING;
         measureCycle = 1;
@@ -183,8 +269,12 @@ void loop() {
          state = STATE_IDLE;
       }
       break;
+    
+    case STATE_TEST:
+    	testPhotoSensor();
+	    break;
   }
-
+*/
 
 }
 
@@ -210,4 +300,6 @@ void loop() {
     lcd.print ("Select");
   }
   */
+
+
 
