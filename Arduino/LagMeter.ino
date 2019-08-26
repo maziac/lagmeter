@@ -47,7 +47,7 @@ const int INPUT_PIN = 2;
 
 
 // Count of cycles to measure the input lag.
-const int COUNT_CYCLES = 5;
+const int COUNT_CYCLES = 100;
 
 
 // Defines for the available LCD keys.
@@ -57,8 +57,7 @@ enum {
   LCD_KEY_LEFT,
   LCD_KEY_RIGHT,
   LCD_KEY_UP,
-  LCD_KEY_DOWN,
-  
+  LCD_KEY_DOWN
 };
 
 
@@ -171,10 +170,12 @@ void Error(char* area, char* error) {
 
 
 // The maximum allowed diff for the photo sensor during stabilizing.
-const int STABILIZE_MAX_DIFF = 10;
+const int STABILIZE_MAX_DIFF = 20;
 
 // Waits until the signal at the photo sensor stabilizes for some time.
-int waitOnStablePhotoSensor(int stabilizeTime) {
+void waitOnStablePhotoSensor(int stabilizeTime) {
+
+  stabilizeTime = 30000;
   // Print
   lcd.clear();
   lcd.print("Wait on stable");
@@ -182,8 +183,7 @@ int waitOnStablePhotoSensor(int stabilizeTime) {
   lcd.print("sensor");
 
   // Measure
-  int startTime, time, count;
-  float avg;
+  int startTime, time, count, displayTime;
   int prevValue = -STABILIZE_MAX_DIFF-1;  // Make sure the first value diff is bigger
   do {
     int value = analogRead(INPUT_PIN);
@@ -191,35 +191,41 @@ int waitOnStablePhotoSensor(int stabilizeTime) {
     int diff = abs(value-prevValue);
     if(diff > STABILIZE_MAX_DIFF) {
       startTime = millis();
-      avg = 0.0;
-      count = 0;
+      displayTime = -1000;
     }
     time = millis() - startTime;
     //Serial.println(time);
     // Print
-    lcd.setCursor(8,1);
-    lcd.print(time);
-    lcd.print("ms    ");
+    if(time-displayTime > 200) {
+      lcd.setCursor(8,1);
+      lcd.print(time);
+      lcd.print("ms    ");
+      displayTime = time;
+    }
     // Next
     prevValue = value;
-    avg += prevValue;
-    count++;
 
     // Wait a little
-    waitMs(100);
+    waitMs(1);
   	if(isAbort())
       return 0;
   } while(time < stabilizeTime);
-  
-  // Calculate average
-  avg /= count;
-  return (int) avg;
 }
 
 
 // Waits until the photo sensor value gets into range.
 void waitOnPhotoSensorRange(struct MinMax range) {
+  int prevTime = millis();
   while(true) {
+    // Check accuracy
+    int nextTime = millis();
+    if(nextTime-prevTime >= 3) {
+      // Error
+      Error("Accuracy:", "Error: >= 3ms");
+      return;
+    }
+    prevTime = nextTime;
+
     // Get photo sensor
     int value = analogRead(INPUT_PIN);
     // Check range
@@ -247,7 +253,7 @@ void testPhotoSensor() {
     lcd.setCursor(11, 1);
     lcd.print(value);
     lcd.print("   ");
-    delay(100);
+    delay(500);
   }
   abortAll = true;
 }
@@ -289,9 +295,9 @@ struct MinMax getMaxMinPhotoValue(int measTime) {
 //   sensor value changes.
 void calibrateAndMeasureLag() {
   // Wait until input (photo sensor) stabilizes
-  int lightValue = waitOnStablePhotoSensor(1000);
-    if(isAbort())
-      return;
+ // waitOnStablePhotoSensor(1000);
+  if(isAbort())
+    return;
 
   // Calibrate
   lcd.clear();
@@ -333,12 +339,15 @@ void calibrateAndMeasureLag() {
   lcd.clear();
   lcd.print("Start testing...");
   
+  // Print main
+  lcd.clear();
+  lcd.print("Test:");
+
   // Measure a few cycles
   struct MinMax timeRange = {1023, 0};
   for(int i=1; i<=COUNT_CYCLES; i++) {
     // Print
-    lcd.clear();
-    lcd.print("Test: ");
+    lcd.setCursor(6,0);
     lcd.print(i);
     lcd.print("/");
     lcd.print(COUNT_CYCLES);
@@ -355,14 +364,20 @@ void calibrateAndMeasureLag() {
     // Output result: 
     lcd.setCursor(0,1);
     lcd.print(time);
-    lcd.print("ms, wait...");
+    lcd.print("ms     ");
     
     // Simulate joystick button unpress
     digitalWrite(OUT_PIN, LOW); 
     // Wait until input (photo sensor) changes
     waitOnPhotoSensorRange(buttonOffLight);
     if(isAbort()) return;
-    
+
+    // Wait a random time to make sure we really get different results.
+    int waitRnd = random(100, 150);
+    //lcd.setCursor(0,0);
+    //lcd.print(waitRnd);
+    waitMs(waitRnd); if(isAbort()) return;
+
     // Calculate max/min.
     if(time > timeRange.max)
       timeRange.max = time;
@@ -378,6 +393,7 @@ void calibrateAndMeasureLag() {
   lcd.print("-");
   lcd.print(timeRange.max);
   lcd.print("ms");
+
 
   // Wait on key press.
   while(getLcdKey() != LCD_KEY_NONE);
@@ -416,8 +432,5 @@ void loop() {
       break;
   }
 }
-
-
-
 
 
