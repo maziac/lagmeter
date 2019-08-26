@@ -50,6 +50,22 @@ const int INPUT_PIN = 2;
 const int COUNT_CYCLES = 5;
 
 
+// Defines for the available LCD keys.
+enum {
+  LCD_KEY_NONE,
+  LCD_KEY_SELECT,
+  LCD_KEY_LEFT,
+  LCD_KEY_RIGHT,
+  LCD_KEY_UP,
+  LCD_KEY_DOWN,
+  
+};
+
+
+// Define used Keys.
+const int KEY_START = LCD_KEY_DOWN;
+const int KEY_TEST = LCD_KEY_LEFT;
+
 
 
 // Is set if a function is (forcefully) left.
@@ -88,24 +104,6 @@ void printMainMenu() {
   lcd.setCursor(0, 1);
   lcd.print("Press 'Start'...");
 }
-
-
-// Defines for the available LCD keys.
-enum {
-  LCD_KEY_NONE,
-  LCD_KEY_SELECT,
-  LCD_KEY_LEFT,
-  LCD_KEY_RIGHT,
-  LCD_KEY_UP,
-  LCD_KEY_DOWN,
-  
-};
-
-
-// Define used Keys.
-const int KEY_START = LCD_KEY_DOWN;
-const int KEY_TEST = LCD_KEY_LEFT;
-
 
 
 // Returns the pressed key (or LCD_KEY_NONE).
@@ -387,16 +385,6 @@ void calibrateAndMeasureLag() {
 
 
 
-// The internal states.
-enum {
-  STATE_IDLE,			// Waits for input.
-  STATE_CALIBRATING,	// Calibrates the phot sensor input.
-  STATE_MEASURING,		// Starts to measure a few cycles.
-  STATE_TEST			// Tests the phot sensor.
-};
-
-int state = STATE_IDLE;
-int measureCycle = 0;
 
 //int out = LOW;
 
@@ -427,95 +415,9 @@ void loop() {
 	  testPhotoSensor();
       break;
   }
-  return;
-
-  /*
-  // Statemachine 
-  switch(state) {
-    case STATE_IDLE:
-      //delay(200);
-      if(getLcdKey() == KEY_START) {
-        // Start the measurement
-        state = STATE_MEASURING;
-        measureCycle = 1;
-        lcd.clear();
-        // Print cycle
-        lcd.print("Testing...");
-      }
-      break;    
-    
-    case STATE_CALIBRATING:
-      //delay(200);
-      if(getLcdKey() == KEY_START) {
-        // Start the measurement
-        state = STATE_MEASURING;
-        measureCycle = 1;
-        lcd.clear();
-        // Print cycle
-        lcd.print("Testing...");
-      }
-      break;
-
-    case STATE_MEASURING:
-      // Wait until input (photo sensor) stabilizes
-      int lightValue = waitOnStablePhotoSensor();
-    	Serial.println(lightValue);
-      // Get time
-      int startTime = millis();
-      // Simulate joystick button press
-      digitalWrite(OUT_PIN, HIGH); 
-      // Wait until input (photo sensor) changes
-      waitOnPhotoSensorChange(lightValue);
-      // Get time
-      int endTime = millis();
-      int time = endTime - startTime;
-      // Output result: 
-      lcd.clear();
-      lcd.print("Test: ");
-      lcd.print(measureCycle);
-      lcd.print("/");
-      lcd.print(MAX_CYCLES);
-      lcd.setCursor(0,1);
-      lcd.print(time);
-      lcd.print(" ms     ");
-      // Next
-      measureCycle ++;
-      if(measureCycle > MAX_CYCLES) {
-        // Measurement ends
-         state = STATE_IDLE;
-      }
-      break;
-    
-    case STATE_TEST:
-    	testPhotoSensor();
-	    break;
-  }
-*/
-
 }
 
 
-/*
-
-  int x;
-  x = analogRead (0);
-  lcd.setCursor(10,1);
-  if (x < 60) {
-    lcd.print ("Right ");
-  }
-  else if (x < 200) {
-    lcd.print ("Up    ");
-  }
-  else if (x < 400){
-    lcd.print ("Down  ");
-  }
-  else if (x < 600){
-    lcd.print ("Left  ");
-  }
-  else if (x < 800){
-    lcd.print ("Select");
-  }
-  */
 
 
 
