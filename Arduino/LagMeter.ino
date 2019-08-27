@@ -88,6 +88,9 @@ LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7); // LCD pin configuration.
 
 // The setup routine.
 void setup() {
+  // Turnoff interrupts.
+  noInterrupts();
+
   // Setup GPIOs
   pinMode(OUT_PIN, OUTPUT);
   digitalWrite(OUT_PIN, LOW); 
@@ -100,6 +103,16 @@ void setup() {
   // Debug communication
   Serial.begin(115200);
   Serial.println("Serial connection up!");
+
+
+   TCCR0A=(1<<WGM01);    //Set the CTC mode   
+  OCR0A=0xF9; //Value for ORC0A for 1ms 
+  
+  TIMSK0|=(1<<OCIE0A);   //Set the interrupt request
+  //sei(); //Enable interrupt
+  
+  TCCR0B|=(1<<CS01);    //Set the prescale 1/64 clock
+  TCCR0B|=(1<<CS00);
 }
 
 
@@ -111,6 +124,13 @@ void printMainMenu() {
   lcd.print("** Lag-Meter  **");
   lcd.setCursor(0, 1);
   lcd.print("Press 'Start'...");
+}
+
+
+// Substitute for the interrupt based delay function.
+// This function does an active wait.
+void sleepMs() {
+
 }
 
 
@@ -178,41 +198,7 @@ void Error(char* area, char* error) {
 }
 
 
-// Waits until the photo sensor value gets into range.
-void waitOnPhotoSensorRange(struct MinMax range) {
-  int prevTime, startTime;
-  startTime = prevTime = millis();
-  while(true) {
-    // Check accuracy
-    int nextTime = millis();
-    if(nextTime-prevTime >= 3) {
-      // Error
-      Error("Error:", "Accuracy >= 3ms");
-      return;
-    }
-    prevTime = nextTime;
-
-    // Get photo sensor
-    int value = analogRead(INPUT_PIN);
-    // Check range
-    if(value >= range.min && value <= range.max)
-  		break;     
-    // Wait a little
-    //delayMicroseconds(100);
-    if(isAbort())
-      break;
-
-    // Abort if taken too long
-    if(nextTime-startTime > 5000)  {
-      // Error
-      Error("Error:", "No signal");
-      return;
-    }
-  }
-}
-
-
-// State: test phot sensor.
+// State: test photo sensor.
 // The photo sensor input is read and printed to the LCD.
 // Press "KEY_TEST" to leave.
 void testPhotoSensor() {
@@ -232,6 +218,48 @@ void testPhotoSensor() {
 }
 
 
+// Waits until the photo sensor value gets into range.
+// Returns the time.
+int measureLag(int outpValue, struct MinMax range) {
+  int prevTime, startTime, time;
+  startTime = prevTime = millis();
+  // Simulate joystick button unpress
+  digitalWrite(OUT_PIN, outpValue); 
+  while(true) {
+    // Get photo sensor
+    int value = analogRead(INPUT_PIN);
+
+    // Check accuracy
+    int nextTime = millis();
+    if(nextTime-prevTime >= 3) {
+      // Error
+      Error("Error:", "Accuracy >= 3ms");
+      return;
+    }
+    prevTime = nextTime;
+
+    // Check range
+    if(value >= range.min && value <= range.max)
+  		break;     
+    // Wait a little
+    //delayMicroseconds(100);
+    if(isAbort())
+      break;
+
+    // Abort if taken too long
+    time = nextTime-startTime;
+    if(time > 5000)  {
+      // Error
+      Error("Error:", "No signal");
+      return;
+    }
+  }
+
+  // Return used time
+  return time;
+}
+
+
 // Returns the min/max photo sensor values for a given time frame.
 struct MinMax getMaxMinPhotoValue(int measTime) {
   struct MinMax value;
@@ -239,7 +267,7 @@ struct MinMax getMaxMinPhotoValue(int measTime) {
   int time;
   int startTime = millis();
   do {
-	// Read photo sensor
+	  // Read photo sensor
     int currValue = analogRead(INPUT_PIN);
     if(currValue > value.max)
       value.max = currValue;
@@ -327,24 +355,15 @@ void calibrateAndMeasureLag() {
     lcd.print(COUNT_CYCLES);
     lcd.print(": ");
     
-    // Get time
-    int startTime = millis();
-    // Simulate joystick button press
-    digitalWrite(OUT_PIN, HIGH); 
     // Wait until input (photo sensor) changes
-    waitOnPhotoSensorRange(buttonOnLight);
-    // Get time
-    int endTime = millis();
-    int time = endTime - startTime;
+    int time = measureLag(HIGH, buttonOnLight);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
     lcd.print("ms     ");
     
-    // Simulate joystick button unpress
-    digitalWrite(OUT_PIN, LOW); 
     // Wait until input (photo sensor) changes
-    waitOnPhotoSensorRange(buttonOffLight);
+    measureLag(LOW, buttonOffLight);
     if(isAbort()) return;
 
     // Wait a random time to make sure we really get different results.
@@ -388,6 +407,12 @@ void calibrateAndMeasureLag() {
 
 // Main loop.
 void loop() {
+  
+  //Serial.println(millis());
+  //if(TCNT0 < 1000)
+    Serial.println(TCNT0);
+  return;
+  
 
   /*
   Serial.println(out);
