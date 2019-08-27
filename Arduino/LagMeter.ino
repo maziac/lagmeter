@@ -38,6 +38,10 @@ Current accuracy is < 3ms.
 I also measured the lag directly with a LED connected to the relais. The 
 measured lag was 0-2ms in 100 trials.
 
+
+Note: The measurement should also work with an 8MHz CPU. All the time adjustmeents are done
+so that the correct time should be displayed.
+However it was tested only with a 16MHz CPU.
 */
 
 
@@ -88,9 +92,6 @@ LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7); // LCD pin configuration.
 
 // The setup routine.
 void setup() {
-  // Turnoff interrupts.
-  noInterrupts();
-
   // Setup GPIOs
   pinMode(OUT_PIN, OUTPUT);
   digitalWrite(OUT_PIN, LOW); 
@@ -103,16 +104,6 @@ void setup() {
   // Debug communication
   Serial.begin(115200);
   Serial.println("Serial connection up!");
-
-
-   TCCR0A=(1<<WGM01);    //Set the CTC mode   
-  OCR0A=0xF9; //Value for ORC0A for 1ms 
-  
-  TIMSK0|=(1<<OCIE0A);   //Set the interrupt request
-  //sei(); //Enable interrupt
-  
-  TCCR0B|=(1<<CS01);    //Set the prescale 1/64 clock
-  TCCR0B|=(1<<CS00);
 }
 
 
@@ -141,14 +132,8 @@ int getLcdKey() {
   if (x >= 800) 
     return LCD_KEY_NONE;
   
-  // Some key has been pressed
-  delay(100);	// poor man's debounce
+  waitLcdKeyRelease();
 
-  // Wait until released
-  while(analogRead(0) < 800);
-
-  delay(100); // debounce
- 
   // Return
   if (x < 60)
     return LCD_KEY_RIGHT;
@@ -162,15 +147,24 @@ int getLcdKey() {
 }
 
 
+// Waits on release of key press.
+void waitLcdKeyRelease() {
+  // Some key has been pressed
+  delay(100);	// poor man's debounce
+  // Wait until released
+  while(analogRead(0) < 800);
+  delay(100); // debounce
+}
+
+
 // isAbort: returns true if any key is pressed
 // and sets 'abortAll' to true.
 bool isAbort() {
   if(!abortAll)
-	if(getLcdKey() != LCD_KEY_NONE) 
-      abortAll = true;
+    if(getLcdKey() != LCD_KEY_NONE) 
+        abortAll = true;
   return abortAll;
 }
-
 
 
 // Waits for a certain time or abort (keypress).
@@ -218,48 +212,6 @@ void testPhotoSensor() {
 }
 
 
-// Waits until the photo sensor value gets into range.
-// Returns the time.
-int measureLag(int outpValue, struct MinMax range) {
-  int prevTime, startTime, time;
-  startTime = prevTime = millis();
-  // Simulate joystick button unpress
-  digitalWrite(OUT_PIN, outpValue); 
-  while(true) {
-    // Get photo sensor
-    int value = analogRead(INPUT_PIN);
-
-    // Check accuracy
-    int nextTime = millis();
-    if(nextTime-prevTime >= 3) {
-      // Error
-      Error("Error:", "Accuracy >= 3ms");
-      return;
-    }
-    prevTime = nextTime;
-
-    // Check range
-    if(value >= range.min && value <= range.max)
-  		break;     
-    // Wait a little
-    //delayMicroseconds(100);
-    if(isAbort())
-      break;
-
-    // Abort if taken too long
-    time = nextTime-startTime;
-    if(time > 5000)  {
-      // Error
-      Error("Error:", "No signal");
-      return;
-    }
-  }
-
-  // Return used time
-  return time;
-}
-
-
 // Returns the min/max photo sensor values for a given time frame.
 struct MinMax getMaxMinPhotoValue(int measTime) {
   struct MinMax value;
@@ -281,6 +233,111 @@ struct MinMax getMaxMinPhotoValue(int measTime) {
   } while(time < measTime);
   
   return value;
+}
+
+
+// Waits until the photo sensor value gets into range.
+// Returns the time.
+int measureLag(int outpValue, struct MinMax range) {
+  int key = 1023;
+  int tcount1;
+  bool accuracyOvrflw = false;
+  bool counterOvrflw = false;
+  bool keyPressed = false;
+
+  // Turnoff interrupts.
+  noInterrupts();
+
+  // Setup timer 1 (16 bit timer) to measure the time:
+  // Prescaler: 1024 -> resolution 64us (at F_CPU=16MHz).
+  // No timer compare register.
+  TCCR1A = 0; // No PWM
+  TCCR1B = (1 << CS10) | (1 << CS12);  // Prescaler = 1024
+  TIFR1 = 1<<TOV1;  // Clear pending bits
+  TIMSK1 = 1<<TOIE1;  // For polling only
+
+  // Setup timer 2 (8 bit timer) to check measurement accuracy:
+  // Prescaler: 1024 -> resolution 64us (at F_CPU=16MHz).
+  // No timer compare register.
+  TCCR2A = 0; // No PWM
+  TCCR2B = (1 << CS10) | (1 << CS12);  // Prescaler = 1024
+  TIFR2 = 1<<TOV2;  // Clear pending bits
+  TIMSK2 = 1<<TOIE2;  // For polling only
+
+  // Reset timer
+  const int adjust = 16000000/F_CPU;  // 1 for 16MHz, 2 for 8MHz.
+  const int tcnt2Value = 256-(0.5/0.004/adjust); //  131;  // (256-131)*4us = 0.5ms, would work up to (256-220)*4us = 0.144ms
+  TCNT2 = tcnt2Value;
+  TCNT1 = 0;
+  // Simulate joystick button
+  digitalWrite(OUT_PIN, outpValue); 
+
+  while(true) {
+    // Check range of photo sensor 
+    int value = analogRead(INPUT_PIN);
+    if(value >= range.min && value <= range.max) {
+      tcount1 = TCNT1;
+    	break;  
+    }
+
+    // Assure that measurement accuracy is good enough
+    TCNT2 = tcnt2Value;
+    if(TIFR2 & (1<<TOV2)) {
+      // Error
+      accuracyOvrflw = true;
+      break;
+    }
+
+    // Check if key pressed
+    key = analogRead(0);
+    // Return immediately if something is pressed
+    if (key < 800) {
+      keyPressed = true;
+      break;
+    }
+
+    // Check for time out
+    if(TIFR1 & (1<<TOV1)) {
+      // Interrupt pending bit set -> Overflow happened.
+      // This means 4.19 seconds elapsed with no signal.
+      counterOvrflw = true;
+      break;
+    }
+  };
+
+  // Disable timer interrupts
+  TIMSK1 = 0;
+  TIMSK2 = 0;
+
+  // Enable interrupts
+  interrupts();
+
+  // Key pressed ? -> Abort
+  if(keyPressed) {
+    waitLcdKeyRelease();
+    abortAll = true;
+    return 0xFFFF;
+  }
+
+  // Assure that measuremnt accuracy is good enough
+  if(accuracyOvrflw) {
+    // Error
+    Error("Error:", "Accuracy >= XXms");
+    return 0xFFFF;
+  }
+
+  // Overflow?
+  if(counterOvrflw) {
+    // Interrupt pending bit set -> Overflow happened.
+    // This means 4.19 seconds elapsed with no signal.
+    Error("Error:", "No signal");
+    return 0xFFFF;
+  }
+
+  // Calculate time from counter value.
+  int counterTime = TCNT1/1000*64*adjust;
+
+  return counterTime;
 }
 
 
@@ -375,13 +432,15 @@ void calibrateAndMeasureLag() {
     // Calculate max/min.
     if(time > timeRange.max)
       timeRange.max = time;
-    else if(time < timeRange.min)
+    if(time < timeRange.min)
       timeRange.min = time;
 
     // Print min/max result
     lcd.setCursor(5,1);
-    lcd.print(timeRange.min);
-    lcd.print("-");
+    if(timeRange.min != timeRange.max) {
+      lcd.print(timeRange.min);
+      lcd.print("-");
+    }
     lcd.print(timeRange.max);
     lcd.print("ms     ");
 
@@ -407,12 +466,12 @@ void calibrateAndMeasureLag() {
 
 // Main loop.
 void loop() {
-  
+  /*
   //Serial.println(millis());
   //if(TCNT0 < 1000)
     Serial.println(TCNT0);
   return;
-  
+  */
 
   /*
   Serial.println(out);
@@ -439,5 +498,6 @@ void loop() {
       break;
   }
 }
+
 
 
