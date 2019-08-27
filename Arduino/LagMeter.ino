@@ -29,6 +29,15 @@ LCD keypad shield, keys:
   	// Select");
   }
 
+
+Measurement accuracy:
+The code is not optimized, i.e. no assembler code used for measurement.
+But the C-code has an internal check for accuracy.
+It aborts if accuracy gets too bad.
+Current accuracy is < 3ms.
+I also measured the lag directly with a LED connected to the relais. The 
+measured lag was 0-2ms in 100 trials.
+
 */
 
 
@@ -169,59 +178,16 @@ void Error(char* area, char* error) {
 }
 
 
-// The maximum allowed diff for the photo sensor during stabilizing.
-const int STABILIZE_MAX_DIFF = 20;
-
-// Waits until the signal at the photo sensor stabilizes for some time.
-void waitOnStablePhotoSensor(int stabilizeTime) {
-
-  stabilizeTime = 30000;
-  // Print
-  lcd.clear();
-  lcd.print("Wait on stable");
-  lcd.setCursor(0,1);
-  lcd.print("sensor");
-
-  // Measure
-  int startTime, time, count, displayTime;
-  int prevValue = -STABILIZE_MAX_DIFF-1;  // Make sure the first value diff is bigger
-  do {
-    int value = analogRead(INPUT_PIN);
-    //Serial.println(value);
-    int diff = abs(value-prevValue);
-    if(diff > STABILIZE_MAX_DIFF) {
-      startTime = millis();
-      displayTime = -1000;
-    }
-    time = millis() - startTime;
-    //Serial.println(time);
-    // Print
-    if(time-displayTime > 200) {
-      lcd.setCursor(8,1);
-      lcd.print(time);
-      lcd.print("ms    ");
-      displayTime = time;
-    }
-    // Next
-    prevValue = value;
-
-    // Wait a little
-    waitMs(1);
-  	if(isAbort())
-      return 0;
-  } while(time < stabilizeTime);
-}
-
-
 // Waits until the photo sensor value gets into range.
 void waitOnPhotoSensorRange(struct MinMax range) {
-  int prevTime = millis();
+  int prevTime, startTime;
+  startTime = prevTime = millis();
   while(true) {
     // Check accuracy
     int nextTime = millis();
     if(nextTime-prevTime >= 3) {
       // Error
-      Error("Accuracy:", "Error: >= 3ms");
+      Error("Error:", "Accuracy >= 3ms");
       return;
     }
     prevTime = nextTime;
@@ -232,9 +198,16 @@ void waitOnPhotoSensorRange(struct MinMax range) {
     if(value >= range.min && value <= range.max)
   		break;     
     // Wait a little
-    delayMicroseconds(100);
+    //delayMicroseconds(100);
     if(isAbort())
       break;
+
+    // Abort if taken too long
+    if(nextTime-startTime > 5000)  {
+      // Error
+      Error("Error:", "No signal");
+      return;
+    }
   }
 }
 
@@ -306,7 +279,7 @@ void calibrateAndMeasureLag() {
   digitalWrite(OUT_PIN, HIGH); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOnLight = getMaxMinPhotoValue(500);
+  struct MinMax buttonOnLight = getMaxMinPhotoValue(1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -317,7 +290,7 @@ void calibrateAndMeasureLag() {
   digitalWrite(OUT_PIN, LOW); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOffLight = getMaxMinPhotoValue(500);
+  struct MinMax buttonOffLight = getMaxMinPhotoValue(1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -338,19 +311,22 @@ void calibrateAndMeasureLag() {
   // Print
   lcd.clear();
   lcd.print("Start testing...");
-  
-  // Print main
+  waitMs(1000); if(isAbort()) return;
   lcd.clear();
-  lcd.print("Test:");
+  lcd.setCursor(0,1);
+  lcd.print("Lag: ");
 
   // Measure a few cycles
   struct MinMax timeRange = {1023, 0};
+  float avg = 0.0;
   for(int i=1; i<=COUNT_CYCLES; i++) {
     // Print
-    lcd.setCursor(6,0);
+    lcd.setCursor(0,0);
     lcd.print(i);
     lcd.print("/");
     lcd.print(COUNT_CYCLES);
+    lcd.print(": ");
+    
     // Get time
     int startTime = millis();
     // Simulate joystick button press
@@ -362,7 +338,6 @@ void calibrateAndMeasureLag() {
     int time = endTime - startTime;
     if(isAbort()) return;
     // Output result: 
-    lcd.setCursor(0,1);
     lcd.print(time);
     lcd.print("ms     ");
     
@@ -383,18 +358,25 @@ void calibrateAndMeasureLag() {
       timeRange.max = time;
     else if(time < timeRange.min)
       timeRange.min = time;
+
+    // Print min/max result
+    lcd.setCursor(5,1);
+    lcd.print(timeRange.min);
+    lcd.print("-");
+    lcd.print(timeRange.max);
+    lcd.print("ms     ");
+
+    // Calculate average
+    avg += time;
   }
 
-  // Print result
-  lcd.clear();
-  lcd.print("Measured lag:");
-  lcd.setCursor(0,1);
-  lcd.print(timeRange.min);
-  lcd.print("-");
-  lcd.print(timeRange.max);
-  lcd.print("ms");
-
-
+  // Print average:
+  avg /= COUNT_CYCLES;
+  lcd.setCursor(0,0);
+  lcd.print("Average: ");
+  lcd.print((int)avg);
+  lcd.print("ms     ");
+  
   // Wait on key press.
   while(getLcdKey() != LCD_KEY_NONE);
 }
