@@ -232,6 +232,9 @@ struct MinMax getMaxMinPhotoValue(int measTime) {
       break;
   } while(time < measTime);
   
+  // Allow 1 for uncertainty
+  value.min--;
+  value.max++;
   return value;
 }
 
@@ -335,9 +338,11 @@ int measureLag(int outpValue, struct MinMax range) {
   }
 
   // Calculate time from counter value.
-  int counterTime = TCNT1/1000*64*adjust;
+  long tcount1l = tcount1;
+  tcount1l *= 64*adjust;
+  tcount1l = (tcount1l+500) / 1000; // with rounding
 
-  return counterTime;
+  return (int)tcount1l;
 }
 
 
