@@ -107,7 +107,6 @@ void setup() {
 }
 
 
-
 // Prints the main menu.
 void printMainMenu() {
   // Print "Welcome"
@@ -253,7 +252,7 @@ struct MinMax getMaxMinPhotoValue(int measTime) {
 // Returns the time.
 int measureLag(int outpValue, struct MinMax range) {
   int key = 1023;
-  int tcount1;
+  unsigned int tcount1 = 0;
   bool accuracyOvrflw = false;
   bool counterOvrflw = false;
   bool keyPressed = false;
@@ -329,22 +328,15 @@ int measureLag(int outpValue, struct MinMax range) {
   if(keyPressed) {
     waitLcdKeyRelease();
     abortAll = true;
-    return 0xFFFF;
   }
-
-  // Assure that measuremnt accuracy is good enough
-  if(accuracyOvrflw) {
+  else if(accuracyOvrflw) {    // Assure that measuremnt accuracy is good enough
     // Error
     Error("Error:", "Accuracy >= XXms");
-    return 0xFFFF;
   }
-
-  // Overflow?
-  if(counterOvrflw) {
+  else if(counterOvrflw) {    // Overflow?
     // Interrupt pending bit set -> Overflow happened.
     // This means 4.19 seconds elapsed with no signal.
     Error("Error:", "No signal");
-    return 0xFFFF;
   }
 
   // Calculate time from counter value.

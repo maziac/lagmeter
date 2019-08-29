@@ -23,9 +23,11 @@ You should only try to do this yourself if you already have experience with elec
 IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM THE USE OF THE HW, SCHEMATICS, SW OR ANYTHING ELSE PRESENTED HERE.
 
 
-# Theory
 
-## Lag
+
+# Lag
+
+## Theory
 
 There are a lot of entities that sum up to the total lag.
 Here are the most important ones:
@@ -38,6 +40,17 @@ Here are the most important ones:
 
 It would be beneficial if we could measure each lag individually but this is normally not possible.
 Only the sum of lags can be measured and conclusions might be drawn that may or may not be correct :-)
+
+
+## Additional lag by the measuring equipment
+
+The HW uses a relais to stimulate the button press and a phototransistor to measure the resulting change on the screen.
+Both have lags.
+I measured that the reed relais (Relais SIL 7271-D 5V) bounces for max 40us and has a switching delay which is smaller than 250us.
+The lag of phototransistors in general is in the magnitude of us.
+
+I measured the lag with a LED tight to the reed relais and the overall shown lag was always 1ms.
+So it's safe to assume the additional lag by relais and phototransistor is negligible.
 
 
 ## HW
@@ -162,7 +175,8 @@ This correlates quite good with 20ms for a full screen (half = 10,approx 7).
 - EIZO-SVGA is approx. 8ms faster than EIZO-DVI (minimum).
 => Could be that SVGA output is 8ms faster than HDMI output from the NUC. Then, if BenQ would have an SVGA input a lag of 30ms (minimum could be achievable).
 - BenQ-SVGA and BenQ-DVI are exactly the same speed. So it seems that NUC HDMI and SVGA is the same speed, but EIZO has a bigger input lag on DVI.
-
+- windowed vs. fullscreen: There seems to be no difference. EIZO could be a few ms faster in wondowed mode. BenQ could be a few ms faster in fullscreen mode. So I guess the deviation is only by chance.
+- The (mameau) CRT geometry shader in MAME add 10-14 ms to the overall lag.
 
 See [spreadsheet](Docs/LagMeasurements.ods).
 
