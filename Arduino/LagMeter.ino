@@ -114,7 +114,7 @@ void printMainMenu() {
   lcd.clear();
   lcd.print("** Lag-Meter  **");
   lcd.setCursor(0, 1);
-  lcd.print("Press 'Start'...");
+  lcd.print("Press a key...");
 }
 
 
@@ -200,15 +200,25 @@ void testPhotoSensor() {
   lcd.print("Test sensor...");
   lcd.setCursor(0,1);
   lcd.print("(Max=1023)");
-  while(getLcdKey() == LCD_KEY_NONE) {
-  	// Read photo sensor 
-	int value = analogRead(INPUT_PIN);
-    lcd.setCursor(11, 1);
-    lcd.print(value);
-    lcd.print("   ");
-    delay(500);
+  int outpValue = LOW;
+  while(!abortAll) {
+    // Stimulate button
+    outpValue = ~outpValue;
+    digitalWrite(OUT_PIN, outpValue);
+    waitMs(100); if(isAbort()) return;
+    
+    // Evaluate for some time
+    for(int i=0; i<3; i++) {
+      // Read photo sensor 
+      int value = analogRead(INPUT_PIN);
+      lcd.setCursor(11, 1);
+      lcd.print(value);
+      lcd.print("   ");
+      waitMs(500); if(isAbort()) return;
+    }
+
   }
-  abortAll = true;
+  //abortAll = true;
 }
 
 

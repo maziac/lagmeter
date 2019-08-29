@@ -29,7 +29,7 @@ IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CON
 
 There are a lot of entities that sum up to the total lag.
 Here are the most important ones:
-- **Controller lag**: The controller is normally a USB device. It contains a CPU to measure the button presses and then transmits the status via USB.
+- **Controller lag**: The controller is normally a USB device. It contains a CPU to measure the button presses and then transmits the status via USB. (Wireless controllers add an additional lag of about 5ms.)
 - **USB lag**: This is caused by the USB polling rate. An USB device cannot simply send data to the host when e.g. a button is pressed. Instead it has to wait until it is polled from the host to sednthe button status. The USB polling rate is usually (default) 10ms and can be reduced down to 1ms.
 - **OS lag**: The time the operating system requires to process the USB data and pass it to the user land, i.e. the application.
 - **Application lag**: The time the application (e.g. jstest-gtk or an emulator) requires to read the input and react on it. This is in the range of a few frames, e.g. n*20ms. Triple buffering or enabling of graphics effects will increase the lag.
@@ -38,9 +38,6 @@ Here are the most important ones:
 
 It would be beneficial if we could measure each lag individually but this is normally not possible.
 Only the sum of lags can be measured and conclusions might be drawn that may or may not be correct :-)
-
-
-****MAIL****
 
 
 ## HW
@@ -164,8 +161,13 @@ This correlates quite good with 20ms for a full screen (half = 10,approx 7).
 - BenQ is approx. 30ms faster than EIZO-DVI (minimum).
 - EIZO-SVGA is approx. 8ms faster than EIZO-DVI (minimum).
 => Could be that SVGA output is 8ms faster than HDMI output from the NUC. Then, if BenQ would have an SVGA input a lag of 30ms (minimum could be achievable).
+- BenQ-SVGA and BenQ-DVI are exactly the same speed. So it seems that NUC HDMI and SVGA is the same speed, but EIZO has a bigger input lag on DVI.
+
 
 See [spreadsheet](Docs/LagMeasurements.ods).
+
+
+(Goal: 70ms lag would be nice)
 
 
 # References
@@ -175,6 +177,10 @@ See [spreadsheet](Docs/LagMeasurements.ods).
 - ["Zero Delay USB encoders lag measurements - THEY HAVE LAG - AVOID" by oomek](http://forum.arcadecontrols.com/index.php?topic=153825.0)
 Video comparing zero delay vs. Arduino encoder. zero delay is lagging.
 - ["On the Latency of USB-Connected Input Devices" - by Raphael Wimmer, Andreas Schmid and Florian Bockes (Uni Regensburg)](https://epub.uni-regensburg.de/40182/1/)On_the_Latency_of_USB-Connected_Input_Devices_author_version.pdf
+- ["Warum haben Emulatoren eine Eingabeverzögerung?" by MarcTV](https://marc.tv/warum-haben-emulatoren-eine-eingabeverzoegerung/)
 - [Linux USB polling rate](https://wiki.archlinux.org/index.php/Mouse_polling_rate)
 - [evhz](https://gitlab.com/iankelling/evhz)
+
+
+
 
