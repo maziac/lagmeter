@@ -12,13 +12,13 @@
             "zport": 10000,
             "listFiles": [
                 {
-                    "path": "z80lagtest.list",
+                    "path": "zxlagtest.list",
                     "useFiles": true,
                     "asm": "sjasmplus",
                     "mainFile": "main.asm"
                 }
             ],
-            "startAutomatically": false,
+            "startAutomatically": true,
             "skipInterrupt": true,
             "commandsAfterLaunch": [
             ],
@@ -27,7 +27,7 @@
             },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "stack_top",
-            "load": "z80lagtest.sna",
+            "load": "zxlagtest.sna",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
        }

@@ -7,14 +7,14 @@
 BCKG_LINE_SIZE:  equ     32
 
 ; Colors 
-BLACK:          equ 0<<3
-BLUE:           equ 1<<3
-RED:            equ 2<<3
-MAGENTA:        equ 3<<3
-GREEN:          equ 4<<3
-CYAN:           equ 5<<3
-YELLOW:         equ 6<<3
-WHITE:          equ 7<<3
+BLACK:          equ 0
+BLUE:           equ 1
+RED:            equ 2
+MAGENTA:        equ 3
+GREEN:          equ 4
+CYAN:           equ 5
+YELLOW:         equ 6
+WHITE:          equ 7
 
 BRIGHT:         equ 01000000b
 

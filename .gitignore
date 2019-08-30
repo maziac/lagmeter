@@ -1,1 +1,6 @@
 Arduino/build/
+.~*
+notes.md
+*.labels
+*.list
+**/.tmp/

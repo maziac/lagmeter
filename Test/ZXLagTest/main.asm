@@ -9,6 +9,9 @@ PORT_IF2_JOY_0: equ 0xEFFE ; Keys: 6, 7, 8, 9, 0
 ;PORT_IF2_JOY_1: equ 0xF7FE ; Keys: 5, 4, 3, 2, 1
 
 
+; Port to set the border.
+PORT_BORDER:    equ 0x00FE
+
 
     ORG 0x4000
     defs 0x6000 - $    ; move after screen area
@@ -77,16 +80,26 @@ check_keyboard:
     ld (hl),a
     or a    ; Check if key pressed or released
 
-    ld a,BLACK  ; paper color = black
+    ld a,BLACK  ; color = black
     jr z,no_press  ; Jump if no key pressed
     ; Some key pressed
-    ld a,(WHITE<<3)+BRIGHT ; Paper color = white
+    ld a,WHITE
 no_press:
+    ; Set border
+    ld bc,PORT_BORDER
+    out (c),a
+    ; Convert color to paper color
+    rlca
+    rlca
+    rlca 
+    ; Add brightness
+    ;or BRIGHT ; no brightness otherwise border and screen have different brightness
+    ; Set background color
     call set_backg
     jr main_loop
 
 
-; Used to store thelast keypress.
+; Used to store the last keypress.
 last_keys: defb 0FFh
 
 
