@@ -53,7 +53,7 @@ struct MinMax {
 
 
 // Simulation of the joystick button.
-const int OUT_PIN =  11;
+const int OUT_PIN =  12;
 
 // The analog input from the photo sensor.
 const int INPUT_PIN = 2;
@@ -477,11 +477,20 @@ void calibrateAndMeasureLag() {
 
 
 
-
+const int BUTTON_PIN =  12;
 //int out = LOW;
 
 // Main loop.
 void loop() {
+/*
+  pinMode(BUTTON_PIN, OUTPUT);
+digitalWrite(BUTTON_PIN, HIGH);
+delay(100);
+digitalWrite(BUTTON_PIN, LOW);
+delay(100);
+return;
+*/
+
   /*
   //Serial.println(millis());
   //if(TCNT0 < 1000)

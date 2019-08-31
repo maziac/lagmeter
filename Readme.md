@@ -169,7 +169,7 @@ Problem exactly like [here](https://askubuntu.com/questions/624075/how-do-i-set-
 (Mainly notes to myself)
 
 - The vertical screen position (not the horizontal) matters for the lag measurement. 
-The more the phot sensor is positioned to the bottom the bigger the values. From middle to bottom this is approx. 7ms for the minimum.
+The more the photo sensor is positioned to the bottom the bigger the values. From middle to bottom this is approx. 7ms for the minimum.
 This correlates quite good with 20ms for a full screen (half = 10,approx 7).
 - BenQ is approx. 30ms faster than EIZO-DVI (minimum).
 - EIZO-SVGA is approx. 8ms faster than EIZO-DVI (minimum).
@@ -177,6 +177,11 @@ This correlates quite good with 20ms for a full screen (half = 10,approx 7).
 - BenQ-SVGA and BenQ-DVI are exactly the same speed. So it seems that NUC HDMI and SVGA is the same speed, but EIZO has a bigger input lag on DVI.
 - windowed vs. fullscreen: There seems to be no difference. EIZO could be a few ms faster in wondowed mode. BenQ could be a few ms faster in fullscreen mode. So I guess the deviation is only by chance.
 - The (mameau) CRT geometry shader in MAME add 10-14 ms to the overall lag.
+- From the usblag measurements: 
+    - The Buffalo game controller has only 1ms internal lag. It's the fastest I measured.
+- The ZeroDelay controller has around 10 ms. (Compared total lag with that when Buffalo game controller was used.)
+- With exchanging the monitor and the game controller I can get down to a response time of 45-79ms (with MAME). If I manage to get the linux usb polling time down to 1ms I will gain another 8ms so this would result in: 37-71ms. This is less than half the original response time (!)
+
 
 See [spreadsheet](Docs/LagMeasurements.ods).
 
