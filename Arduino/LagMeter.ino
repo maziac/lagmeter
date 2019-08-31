@@ -196,21 +196,30 @@ void Error(char* area, char* error) {
 // Press "KEY_TEST" to leave.
 void testPhotoSensor() {
   lcd.clear();
-  lcd.print("Test sensor...");
+  lcd.print("Button:");
   lcd.setCursor(0,1);
-  lcd.print("(Max=1023)");
+  lcd.print("Sensor:");
   int outpValue = LOW;
   while(!abortAll) {
     // Stimulate button
     outpValue = ~outpValue;
     digitalWrite(OUT_PIN, outpValue);
-    waitMs(100); if(isAbort()) return;
+
+    // Print button state
+    lcd.setCursor(8, 0);
+    if(outpValue)
+      lcd.print("ON ");
+    else
+      lcd.print("OFF");
+      
+    // Wait for potential lag time
+    waitMs(150); if(isAbort()) return;
     
     // Evaluate for some time
     for(int i=0; i<3; i++) {
       // Read photo sensor 
       int value = analogRead(INPUT_PIN);
-      lcd.setCursor(11, 1);
+      lcd.setCursor(8, 1);
       lcd.print(value);
       lcd.print("   ");
       waitMs(500); if(isAbort()) return;
