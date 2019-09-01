@@ -86,7 +86,8 @@ const int KEY_TEST = LCD_KEY_LEFT;
 bool abortAll = true;
 
 
-LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7); // LCD pin configuration.
+//LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7); // LCD pin configuration.
+LiquidCrystal lcd(8, 3, 2, 4, 5, 6, 7); // LCD pin configuration.
 
 
 
