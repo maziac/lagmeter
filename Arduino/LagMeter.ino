@@ -53,7 +53,7 @@ struct MinMax {
 
 
 // Simulation of the joystick button.
-const int OUT_PIN =  12;
+const int OUT_PIN =  8;
 
 // The analog input from the photo sensor.
 const int INPUT_PIN = 2;
@@ -87,7 +87,8 @@ bool abortAll = true;
 
 
 //LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7); // LCD pin configuration.
-LiquidCrystal lcd(8, 3, 2, 4, 5, 6, 7); // LCD pin configuration.
+//LiquidCrystal lcd(8, 3, 2, 4, 5, 6, 7); // LCD pin configuration.
+LiquidCrystal lcd(19, 17, 18, 4, 5, 6, 7); // LCD pin configuration.
 
 
 
