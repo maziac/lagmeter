@@ -1,48 +1,39 @@
-#include <SPI.h>
-#include <LiquidCrystal.h>
-
-
-
 /*
+Lag-Meter:
+A device to measure the total lag (from USB controller to monitor output).
 
+
+Other timings:
 Reed Relais SIL 7271-D 5V:
 From own measurements:
 - Switch bouncing: 40us
 - Delay: 5V Out to relais switching: < 250us
 
 
-LCD keypad shield, keys:
-  x = analogRead (0);
-  if (x < 60) {
-    // Right
-  }
-  else if (x < 200) {
-    // Up
-  }
-  else if (x < 400) {
-    // Down
-  }
-  else if (x < 600) {
-    // Left
-  }
-  else if (x < 800) {
-  	// Select");
-  }
-
-
 Measurement accuracy:
 The code is not optimized, i.e. no assembler code used for measurement.
 But the C-code has an internal check for accuracy.
 It aborts if accuracy gets too bad.
-Current accuracy is < 3ms.
+Current accuracy is < 1ms.
 I also measured the lag directly with a LED connected to the relais. The 
-measured lag was 0-2ms in 100 trials.
+measured lag was 1ms in 100 trials.
 
 
 Note: The measurement should also work with an 8MHz CPU. All the time adjustmeents are done
 so that the correct time should be displayed.
 However it was tested only with a 16MHz CPU.
 */
+
+#include <SPI.h>
+#include <LiquidCrystal.h>
+
+
+// The SW version.
+#define SW_VERSION "0.3"
+
+// Define this for comarison measurements with an oscilloscope or a camera.
+#define OUT_PIN_BUTTON_COMPARE_TIME 3
+
 
 
 // Structure to return min/max values.
@@ -53,10 +44,10 @@ struct MinMax {
 
 
 // Simulation of the joystick button.
-const int OUT_PIN =  8;
+const int OUT_PIN_BUTTON =  8;
 
 // The analog input from the photo sensor.
-const int INPUT_PIN = 2;
+const int IN_PIN_PHOTO_SENSOR = 2;
 
 
 // Count of cycles to measure the input lag.
@@ -95,9 +86,18 @@ LiquidCrystal lcd(19, 17, 18, 4, 5, 6, 7); // LCD pin configuration.
 // The setup routine.
 void setup() {
   // Setup GPIOs
-  pinMode(OUT_PIN, OUTPUT);
-  digitalWrite(OUT_PIN, LOW); 
+  pinMode(OUT_PIN_BUTTON, OUTPUT);
+  digitalWrite(OUT_PIN_BUTTON, LOW); 
   pinMode(2, INPUT_PULLUP);
+
+#ifdef OUT_PIN_BUTTON_COMPARE_TIME
+  pinMode(OUT_PIN_BUTTON_COMPARE_TIME, OUTPUT);
+  digitalWrite(OUT_PIN_BUTTON_COMPARE_TIME, LOW); 
+#endif
+
+  // Random seed now depending on photo sensor value (should be somewhat random)
+  randomSeed(analogRead(2));
+
 
   // Setup LCD
   lcd.begin(16, 2);
@@ -106,6 +106,7 @@ void setup() {
   // Debug communication
   Serial.begin(115200);
   Serial.println("Serial connection up!");
+
 }
 
 
@@ -115,7 +116,7 @@ void printMainMenu() {
   lcd.clear();
   lcd.print("** Lag-Meter  **");
   lcd.setCursor(0, 1);
-  lcd.print("Press a key...");
+  lcd.print("v" SW_VERSION "," __DATE__);
 }
 
 
@@ -205,7 +206,7 @@ void testPhotoSensor() {
   while(!abortAll) {
     // Stimulate button
     outpValue = ~outpValue;
-    digitalWrite(OUT_PIN, outpValue);
+    digitalWrite(OUT_PIN_BUTTON, outpValue);
 
     // Print button state
     lcd.setCursor(8, 0);
@@ -220,7 +221,7 @@ void testPhotoSensor() {
     // Evaluate for some time
     for(int i=0; i<3; i++) {
       // Read photo sensor 
-      int value = analogRead(INPUT_PIN);
+      int value = analogRead(IN_PIN_PHOTO_SENSOR);
       lcd.setCursor(8, 1);
       lcd.print(value);
       lcd.print("   ");
@@ -235,12 +236,12 @@ void testPhotoSensor() {
 // Returns the min/max photo sensor values for a given time frame.
 struct MinMax getMaxMinPhotoValue(int measTime) {
   struct MinMax value;
-  value.min = value.max = analogRead(INPUT_PIN);
+  value.min = value.max = analogRead(IN_PIN_PHOTO_SENSOR);
   int time;
   int startTime = millis();
   do {
 	  // Read photo sensor
-    int currValue = analogRead(INPUT_PIN);
+    int currValue = analogRead(IN_PIN_PHOTO_SENSOR);
     if(currValue > value.max)
       value.max = currValue;
     else if(currValue < value.min)
@@ -252,16 +253,16 @@ struct MinMax getMaxMinPhotoValue(int measTime) {
       break;
   } while(time < measTime);
   
-  // Allow 1 for uncertainty
-  value.min--;
-  value.max++;
+  // Add small safety margin
+  value.min -= 2;
+  value.max += 2;
   return value;
 }
 
 
 // Waits until the photo sensor value gets into range.
 // Returns the time.
-int measureLag(int outpValue, struct MinMax range) {
+int measureLag(int outpValue, struct MinMax range, bool invertRange = false) {
   int key = 1023;
   unsigned int tcount1 = 0;
   bool accuracyOvrflw = false;
@@ -293,14 +294,29 @@ int measureLag(int outpValue, struct MinMax range) {
   TCNT2 = tcnt2Value;
   TCNT1 = 0;
   // Simulate joystick button
-  digitalWrite(OUT_PIN, outpValue); 
+  digitalWrite(OUT_PIN_BUTTON, outpValue); 
+
+#ifdef OUT_PIN_BUTTON_COMPARE_TIME
+  if(outpValue)
+    digitalWrite(OUT_PIN_BUTTON_COMPARE_TIME, HIGH); 
+#endif 
 
   while(true) {
     // Check range of photo sensor 
-    int value = analogRead(INPUT_PIN);
-    if(value >= range.min && value <= range.max) {
-      tcount1 = TCNT1;
-    	break;  
+    int value = analogRead(IN_PIN_PHOTO_SENSOR);
+    if(invertRange) {
+      // Check for inverted range
+      if(value < range.min || value > range.max) {
+        tcount1 = TCNT1;
+        break;  
+      }
+    }
+    else {
+      // Check for normal range
+      if(value >= range.min && value <= range.max) {
+        tcount1 = TCNT1;
+        break;  
+      }
     }
 
     // Assure that measurement accuracy is good enough
@@ -327,6 +343,11 @@ int measureLag(int outpValue, struct MinMax range) {
       break;
     }
   };
+
+#ifdef OUT_PIN_BUTTON_COMPARE_TIME
+  if(outpValue)
+    digitalWrite(OUT_PIN_BUTTON_COMPARE_TIME, LOW); 
+#endif
 
   // Disable timer interrupts
   TIMSK1 = 0;
@@ -379,7 +400,7 @@ void calibrateAndMeasureLag() {
   lcd.clear();
   lcd.print("Calibrating...");
   // Simulate joystick button press
-  digitalWrite(OUT_PIN, HIGH); 
+  digitalWrite(OUT_PIN_BUTTON, HIGH); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
   struct MinMax buttonOnLight = getMaxMinPhotoValue(1500);
@@ -390,7 +411,7 @@ void calibrateAndMeasureLag() {
   lcd.print("-");
   lcd.print(buttonOnLight.max);
   // Simulate joystick button unpress
-  digitalWrite(OUT_PIN, LOW); 
+  digitalWrite(OUT_PIN_BUTTON, LOW); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
   struct MinMax buttonOffLight = getMaxMinPhotoValue(1500);
@@ -431,7 +452,7 @@ void calibrateAndMeasureLag() {
     lcd.print(": ");
     
     // Wait until input (photo sensor) changes
-    int time = measureLag(HIGH, buttonOnLight);
+    int time = measureLag(HIGH, buttonOffLight, true);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
@@ -502,7 +523,7 @@ return;
 
   /*
   Serial.println(out);
-  digitalWrite(OUT_PIN, out);
+  digitalWrite(OUT_PIN_BUTTON, out);
   delay(10);
   out = ~out;
   return;
