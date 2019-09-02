@@ -89,6 +89,26 @@ You can interrupt all measurements by pressing any key.
 This consists of a program that stimulates a button through an OUTPUT_PIN. Then it measures the time until the input value (from a photo resistor) changes.
 
 
+# Validation
+
+I did a few test to validate the measured times.
+
+Reed Relais SIL 7271-D 5V measurements with oscilloscope:
+- Switch bouncing: 40us
+- Delay: 5V Out to relais switching: < 250us
+
+Measurement accuracy:
+The code is not optimized, i.e. no assembler code is used for measurement.
+But the C-code has an internal check for accuracy.
+It aborts if accuracy gets too bad.
+Current accuracy is < 1ms.
+I also measured the lag directly with a LED connected to the relais. The 
+measured lag was 1ms in 100 trials.
+
+
+
+
+
 # System under Test - Setup
 
 ## HW
@@ -181,6 +201,9 @@ This correlates quite good with 20ms for a full screen (half = 10,approx 7).
     - The Buffalo game controller has only 1ms internal lag. It's the fastest I measured.
 - The ZeroDelay controller has around 10 ms. (Compared total lag with that when Buffalo game controller was used.)
 - With exchanging the monitor and the game controller I can get down to a response time of 45-79ms (with MAME). If I manage to get the linux usb polling time down to 1ms I will gain another 8ms so this would result in: 37-71ms. This is less than half the original response time (!)
+
+- If I test against the inverted range the results are a few ms better: 4 ms for BenQ and 10-20ms for Eizo. So this setting is better for comparison with a camera to check the lag until something happens on the monitor.
+However, this does not mean that the monitor is showning the area in full brightness yet. For this the measurement against the non-inverted range might be more correct/more meaningful.
 
 
 See [spreadsheet](Docs/LagMeasurements.ods).

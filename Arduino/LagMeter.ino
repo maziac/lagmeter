@@ -11,7 +11,7 @@ From own measurements:
 
 
 Measurement accuracy:
-The code is not optimized, i.e. no assembler code used for measurement.
+The code is not optimized, i.e. no assembler code is used for measurement.
 But the C-code has an internal check for accuracy.
 It aborts if accuracy gets too bad.
 Current accuracy is < 1ms.
@@ -254,8 +254,8 @@ struct MinMax getMaxMinPhotoValue(int measTime) {
   } while(time < measTime);
   
   // Add small safety margin
-  value.min -= 2;
-  value.max += 2;
+  value.min--;
+  value.max++;
   return value;
 }
 
@@ -268,6 +268,12 @@ int measureLag(int outpValue, struct MinMax range, bool invertRange = false) {
   bool accuracyOvrflw = false;
   bool counterOvrflw = false;
   bool keyPressed = false;
+
+  // Add another small safety margin if range is inverted
+  if(invertRange) {
+    range.min--;
+    range.max++;
+  }
 
   // Turnoff interrupts.
   noInterrupts();
