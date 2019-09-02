@@ -97,6 +97,17 @@ Reed Relais SIL 7271-D 5V measurements with oscilloscope:
 - Switch bouncing: 40us
 - Delay: 5V Out to relais switching: < 250us
 
+Photo sensor response time (cyan is the compare-digital-out, starts with button, ends when photo sensor range is met):
+
+- Photosensor (yellow) attached to EIZO monitor:
+![](Images/photo_sensor_following_comp_out_EIZO.BMP)
+Response time is around 10-15ms, this might be due to the monitor requiring some time to fully light the area.
+
+- Photosensor (yellow) attached simply to an (inverted) LED:
+![](Images/photo_sensor_following_comp_out_LED.BMP)
+Response is very fast, within 0.5ms.
+
+
 Measurement accuracy:
 The code is not optimized, i.e. no assembler code is used for measurement.
 But the C-code has an internal check for accuracy.
