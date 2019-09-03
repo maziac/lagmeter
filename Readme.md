@@ -53,6 +53,11 @@ I measured the lag with a LED tight to the reed relais and the overall shown lag
 So it's safe to assume the additional lag by relais and phototransistor is negligible.
 
 
+## Influence of Intervals (Polling)
+
+<<xxxxx>>
+
+
 ## HW
 
 ### Schematics (TinkerCad)
@@ -93,28 +98,43 @@ This consists of a program that stimulates a button through an OUTPUT_PIN. Then 
 
 I did a few test to validate the measured times.
 
-Reed Relais SIL 7271-D 5V measurements with oscilloscope:
-- Switch bouncing: 40us
+## Reed Relais SIL 7271-D 5V
+
+Measurements with oscilloscope:
+- Switch bouncing is less than 40us
+![](Images/button_reed_relais_press.BMP)
 - Delay: 5V Out to relais switching: < 250us
 
-Photo sensor response time (cyan is the compare-digital-out, starts with button, ends when photo sensor range is met):
+Both together are << 1ms.
+
+
+
+## Photo sensor 
+
+Response time (cyan is the compare-digital-out, starts with button, ends when photo sensor range is met):
 
 - Photosensor (yellow) attached to EIZO monitor:
 ![](Images/photo_sensor_following_comp_out_EIZO.BMP)
-Response time is around 10-15ms, this might be due to the monitor requiring some time to fully light the area.
+Time from dark to bright is around 10-15ms, this might be due to the monitor requiring some time to fully light the area.
+
+- Photosensor (yellow) attached to BenQ monitor:
+![](Images/photo_sensor_following_comp_out_BENQ.BMP)
+Time from dark to bright here is also  around 10-15ms. What can be seen as well is that the overall response time for the BenQ is much shorter.
 
 - Photosensor (yellow) attached simply to an (inverted) LED:
 ![](Images/photo_sensor_following_comp_out_LED.BMP)
 Response is very fast, within 0.5ms.
 
+The code to measure the lag has a check to test that the time between 2 measurements does not become bigger than 1ms. In that case it would show an error in the display.
 
-Measurement accuracy:
-The code is not optimized, i.e. no assembler code is used for measurement.
-But the C-code has an internal check for accuracy.
-It aborts if accuracy gets too bad.
-Current accuracy is < 1ms.
-I also measured the lag directly with a LED connected to the relais. The 
-measured lag was 1ms in 100 trials.
+
+## Direct feedback with LED
+
+I put an LED to the relais. The LED emitted light into the photo sensor. 
+This is the fastest feedback that could be measured. With the accuracy considerations above the overall lag should be max. 1ms.
+
+Here is the result for 100 test cycles:
+![](Images/direct_LED_feedback.jpg)
 
 
 
