@@ -32,7 +32,7 @@ IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CON
 There are a lot of entities that sum up to the total lag.
 Here are the most important ones:
 - **Controller lag**: The controller is normally a USB device. It contains a CPU to measure the button presses and then transmits the status via USB. (Wireless controllers add an additional lag of about 5ms.)
-- **USB lag**: This is caused by the USB polling rate. An USB device cannot simply send data to the host when e.g. a button is pressed. Instead it has to wait until it is polled from the host to sednthe button status. The USB polling rate is usually (default) 10ms and can be reduced down to 1ms.
+- **USB lag**: This is caused by the USB polling rate. An USB device cannot simply send data to the host when e.g. a button is pressed. Instead it has to wait until it is polled from the host to send the button status. The USB polling rate is usually (default) 10ms and can be reduced down to 1ms.
 - **OS lag**: The time the operating system requires to process the USB data and pass it to the user land, i.e. the application.
 - **Application lag**: The time the application (e.g. jstest-gtk or an emulator) requires to read the input and react on it. This is in the range of a few frames, e.g. n*20ms. Triple buffering or enabling of graphics effects will increase the lag.
 - **Video encoding lag**: Creating the video signal will also introduce a little lag. I'm not sure, mabye this is neglectible, but in theory it is there and can also vary for the used encoding, i.e. SVGA vs HDMI.
@@ -55,6 +55,23 @@ So it's safe to assume the additional lag by relais and phototransistor is negli
 
 ## Influence of Intervals (Polling)
 
+Understanding the impact of polling intervals is essential when dealing with input lag.
+When the joystick button is pressed it is not immediately send to the program that evaluates it. Instead the button value is polled at certain intervals.
+Depending on the time when the button is pressed relative to the poll a different time is required until the button press information arrives at its destination.
+This is the most common source of introduced lag. And the bad thing about it is that it is not constant: the lag time varies at exactly the polling interval time.
+Therefore it is important to use short (or better no) polling wherever possible.
+It simply increase the variance in the lag.
+
+Unfortunately there is not only one component that introduces lag via polling.
+There are at least:
+- The USB controller (normally it is not possible to obtain the sources for the firmware of a controller so a particular controller might could work differently but in general it is safe to assume that the buttons etc. are polled at a certain frequency.)
+- The USB polling inside the OS. This is often set to 8ms (125Hz) but can be reduced to a minimum of 1ms.
+- The emulator polling the joystick: This is done at frame rate, i.e. 20ms (50Hz) for Europe and 16.7ms (60Hz) for US.
+- The monitor signal HW: This as well uses the frame rate, i.e. 20 or 16.7ms, but might not be in sync (vsync) with the emulator.
+Note: Of course you could increase the frame rate to lower the interval/lower the latency. The problem is that if you use another frame rate than the source (i.e. the emulator) you may encounter other visual artefacts.
+
+
+
 <<xxxxx>>
 
 
@@ -74,6 +91,8 @@ Note: You don't need to wire the LCD and buttons if you use the LCD Keypad shiel
 - Reed Relais SIL 7271-D 5V
 - Phototransistor BPX 38-3 OSO
 - R=22k
+- C=4.7uF/16V
+- USB Host Shield v2.0
 
 
 
@@ -96,7 +115,7 @@ This consists of a program that stimulates a button through an OUTPUT_PIN. Then 
 
 # Validation
 
-I did a few test to validate the measured times.
+I did a few tests to validate the measured times.
 
 ## Reed Relais SIL 7271-D 5V
 
