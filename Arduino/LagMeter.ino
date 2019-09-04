@@ -29,7 +29,7 @@ However it was tested only with a 16MHz CPU.
 
 
 // The SW version.
-#define SW_VERSION "0.3"
+#define SW_VERSION "0.4"
 
 // Define this for comarison measurements with an oscilloscope or a camera.
 #define OUT_PIN_BUTTON_COMPARE_TIME 3
@@ -46,8 +46,11 @@ struct MinMax {
 // Simulation of the joystick button.
 const int OUT_PIN_BUTTON =  8;
 
-// The analog input from the photo sensor.
+// The analog input for the photo sensor.
 const int IN_PIN_PHOTO_SENSOR = 2;
+
+// The analog input for the SVGA connector (blue, or red or green)
+const int IN_PIN_SVGA = 1;
 
 
 // Count of cycles to measure the input lag.
@@ -66,8 +69,9 @@ enum {
 
 
 // Define used Keys.
-const int KEY_START = LCD_KEY_DOWN;
-const int KEY_TEST = LCD_KEY_LEFT;
+const int KEY_TEST_PHOTO_BUTTON = LCD_KEY_LEFT;
+const int KEY_MEASURE_PHOTO = LCD_KEY_DOWN;
+const int KEY_MEASURE_SVGA = LCD_KEY_RIGHT;
 
 
 
@@ -234,14 +238,14 @@ void testPhotoSensor() {
 
 
 // Returns the min/max photo sensor values for a given time frame.
-struct MinMax getMaxMinPhotoValue(int measTime) {
+struct MinMax getMaxMinAnalogInP(int inputPin, int measTime) {
   struct MinMax value;
-  value.min = value.max = analogRead(IN_PIN_PHOTO_SENSOR);
+  value.min = value.max = analogRead(inputPin);
   int time;
   int startTime = millis();
   do {
 	  // Read photo sensor
-    int currValue = analogRead(IN_PIN_PHOTO_SENSOR);
+    int currValue = analogRead(inputPin);
     if(currValue > value.max)
       value.max = currValue;
     else if(currValue < value.min)
@@ -260,9 +264,10 @@ struct MinMax getMaxMinPhotoValue(int measTime) {
 }
 
 
-// Waits until the photo sensor value gets into range.
-// Returns the time.
-int measureLag(int outpValue, struct MinMax range, bool invertRange = false) {
+// Waits until the photo sensor (or SVGA value) value gets into range.
+// @param inputPin Pin from which the analog input is read. Photo sensor or SVGA.
+// @return the time.
+int measureLag(int inputPin, int outpValue, struct MinMax range, bool invertRange = false) {
   int key = 1023;
   unsigned int tcount1 = 0;
   bool accuracyOvrflw = false;
@@ -309,7 +314,7 @@ int measureLag(int outpValue, struct MinMax range, bool invertRange = false) {
 
   while(true) {
     // Check range of photo sensor 
-    int value = analogRead(IN_PIN_PHOTO_SENSOR);
+    int value = analogRead(inputPin);
     if(invertRange) {
       // Check for inverted range
       if(value < range.min || value > range.max) {
@@ -396,20 +401,15 @@ int measureLag(int outpValue, struct MinMax range, bool invertRange = false) {
 // Measurement:
 //   Simulate joystick button press -> measure time until photo
 //   sensor value changes.
-void calibrateAndMeasureLag() {
-  // Wait until input (photo sensor) stabilizes
- // waitOnStablePhotoSensor(1000);
-  if(isAbort())
-    return;
-
+void measurePhotoSensor() {
   // Calibrate
   lcd.clear();
-  lcd.print("Calibrating...");
+  lcd.print("Calib. Photo S.");
   // Simulate joystick button press
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOnLight = getMaxMinPhotoValue(1500);
+  struct MinMax buttonOnLight = getMaxMinAnalogInP(IN_PIN_PHOTO_SENSOR, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -420,7 +420,7 @@ void calibrateAndMeasureLag() {
   digitalWrite(OUT_PIN_BUTTON, LOW); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOffLight = getMaxMinPhotoValue(1500);
+  struct MinMax buttonOffLight = getMaxMinAnalogInP(IN_PIN_PHOTO_SENSOR, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -458,14 +458,14 @@ void calibrateAndMeasureLag() {
     lcd.print(": ");
     
     // Wait until input (photo sensor) changes
-    int time = measureLag(HIGH, buttonOffLight, true);
+    int time = measureLag(IN_PIN_PHOTO_SENSOR, HIGH, buttonOffLight, true);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
     lcd.print("ms     ");
     
     // Wait until input (photo sensor) changes
-    measureLag(LOW, buttonOffLight);
+    measureLag(IN_PIN_PHOTO_SENSOR, LOW, buttonOffLight);
     if(isAbort()) return;
 
     // Wait a random time to make sure we really get different results.
@@ -496,7 +496,7 @@ void calibrateAndMeasureLag() {
   // Print average:
   avg /= COUNT_CYCLES;
   lcd.setCursor(0,0);
-  lcd.print("Average: ");
+  lcd.print("Avg Phot: ");
   lcd.print((int)avg);
   lcd.print("ms     ");
   
@@ -506,7 +506,128 @@ void calibrateAndMeasureLag() {
 
 
 
-const int BUTTON_PIN =  12;
+// Calibrates on the SVGA output and measure the
+// input lag for a few cycles.
+// Uses the blue-output of SVGA (but you could also use red or green).
+// Calibration: 
+//   Simulate joystick button press -> measure svga brightness, i.e. max signal.
+//   Simulate joystick button unpress -> measure svga darkness, i.e. max signal.
+// Measurement:
+//   Simulate joystick button press -> measure time until svga value changes
+void measureSVGA() {
+  // Calibrate
+  lcd.clear();
+  lcd.print("Calibrate SVGA");
+  // Simulate joystick button press
+  digitalWrite(OUT_PIN_BUTTON, HIGH); 
+  waitMs(500); if(isAbort()) return;
+  // Get max svga value
+  struct MinMax buttonOnSVGA = getMaxMinAnalogInP(IN_PIN_SVGA, 1500);
+  if(isAbort()) return;
+  // Print
+  lcd.setCursor(0,1);
+  lcd.print(buttonOnSVGA.max);
+  // Simulate joystick button unpress
+  digitalWrite(OUT_PIN_BUTTON, LOW); 
+  waitMs(500); if(isAbort()) return;
+  // Get max/min light value
+  struct MinMax buttonOffSVGA = getMaxMinAnalogInP(IN_PIN_SVGA, 1500);
+  if(isAbort()) return;
+  // Print
+  lcd.setCursor(0,1);
+  lcd.print(buttonOffSVGA.max);
+  lcd.print("         ");
+  waitMs(1000); if(isAbort()) return;
+
+  // Print diff
+  lcd.setCursor(0,1);
+  lcd.print("Diff=");
+  lcd.print(buttonOnSVGA.max-buttonOffSVGA.max);
+  lcd.print("         ");
+  waitMs(1000); if(isAbort()) return;
+
+  // Check values. They should differ clearly. (Should be around 100.)
+  if(buttonOnSVGA.max-buttonOffSVGA.max < 20) {
+    // Error
+    Error("Calibr. Error:", "Signal too weak");
+    return;
+  }
+  
+  // Calculate measure ranges 
+  buttonOnSVGA.min = (buttonOnSVGA.max+buttonOffSVGA.max)/2;
+  buttonOnSVGA.max = 1023;
+  buttonOffSVGA.min = 0;
+  
+  // Print
+  lcd.clear();
+  lcd.print("Start testing...");
+  waitMs(1000); if(isAbort()) return;
+  lcd.clear();
+  lcd.setCursor(0,1);
+  lcd.print("Lag: ");
+
+  // Measure a few cycles
+  struct MinMax timeRange = {1023, 0};
+  float avg = 0.0;
+  for(int i=1; i<=COUNT_CYCLES; i++) {
+    // Print
+    lcd.setCursor(0,0);
+    lcd.print(i);
+    lcd.print("/");
+    lcd.print(COUNT_CYCLES);
+    lcd.print(": ");
+    
+    // Wait until input (photo sensor) changes
+    int time = measureLag(IN_PIN_SVGA, HIGH, buttonOffSVGA, true);
+    if(isAbort()) return;
+    // Output result: 
+    lcd.print(time);
+    lcd.print("ms     ");
+    
+    // Wait until input (photo sensor) changes
+    measureLag(IN_PIN_SVGA, LOW, buttonOffSVGA);
+    if(isAbort()) return;
+
+    // Wait a random time to make sure we really get different results.
+    int waitRnd = random(100, 150);
+    //lcd.setCursor(0,0);
+    //lcd.print(waitRnd);
+    waitMs(waitRnd); if(isAbort()) return;
+
+    // Calculate max/min.
+    if(time > timeRange.max)
+      timeRange.max = time;
+    if(time < timeRange.min)
+      timeRange.min = time;
+
+    // Print min/max result
+    lcd.setCursor(5,1);
+    if(timeRange.min != timeRange.max) {
+      lcd.print(timeRange.min);
+      lcd.print("-");
+    }
+    lcd.print(timeRange.max);
+    lcd.print("ms     ");
+
+    // Calculate average
+    avg += time;
+  }
+
+  // Print average:
+  avg /= COUNT_CYCLES;
+  lcd.setCursor(0,0);
+  lcd.print("Avg SVGA: ");
+  lcd.print((int)avg);
+  lcd.print("ms     ");
+  
+  // Wait on key press.
+  while(getLcdKey() != LCD_KEY_NONE);
+}
+
+
+
+
+//const int BUTTON_PIN =  12;
 //int out = LOW;
 
 // Main loop.
@@ -544,11 +665,14 @@ return;
   int key = getLcdKey();
   
   switch(key) {
-    case KEY_START:
-      calibrateAndMeasureLag();
+    case KEY_TEST_PHOTO_BUTTON:
+	    testPhotoSensor();
       break;
-    case KEY_TEST:
-	  testPhotoSensor();
+    case KEY_MEASURE_PHOTO:
+      measurePhotoSensor();
+      break;
+    case KEY_MEASURE_SVGA:
+      measureSVGA();
       break;
   }
 }

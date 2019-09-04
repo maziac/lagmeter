@@ -255,6 +255,14 @@ This correlates quite good with 20ms for a full screen (half = 10,approx 7).
 - If I test against the inverted range the results are a few ms better: 4 ms for BenQ and 10-20ms for Eizo. So this setting is better for comparison with a camera to check the lag until something happens on the monitor.
 However, this does not mean that the monitor is showning the area in full brightness yet. For this the measurement against the non-inverted range might be more correct/more meaningful.
 
+- The EIZO seems to have a high variance also depending on the brightness: 
+If full brightness is used as with the ZXLagTest program the lag times are lower.
+For the BenQ w???
+
+- SVGA results:
+    - BenQ introduces a lag of 9-12ms
+    - EIZO introduces a lag of 9-12ms
+    
 
 See [spreadsheet](Docs/LagMeasurements.ods).
 

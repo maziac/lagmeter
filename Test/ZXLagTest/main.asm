@@ -43,6 +43,9 @@ main:
     ; CLS
     call clear_screen
     call clear_backg
+    ld bc,PORT_BORDER
+    ld a,BLACK
+    out (c),a
 
     ; Init
 lbl1:
@@ -74,9 +77,11 @@ check_keyboard:
     ; Some key pressed
     ld a,WHITE
 no_press:
+ if 0  ; Disable border
     ; Set border
     ld bc,PORT_BORDER
     out (c),a
+ endif
     ; Convert color to paper color
     rlca
     rlca
