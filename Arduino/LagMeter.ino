@@ -109,7 +109,7 @@ void setup() {
   
   // Debug communication
   Serial.begin(115200);
-  Serial.println("Serial connection up!");
+  Serial.println(F("Serial connection up!"));
 
 }
 
@@ -118,9 +118,9 @@ void setup() {
 void printMainMenu() {
   // Print "Welcome"
   lcd.clear();
-  lcd.print("** Lag-Meter  **");
+  lcd.print(F("** Lag-Meter  **"));
   lcd.setCursor(0, 1);
-  lcd.print("v" SW_VERSION "," __DATE__);
+  lcd.print(F("v" SW_VERSION "," __DATE__));
 }
 
 
@@ -188,7 +188,7 @@ void waitMs(int waitTime) {
 // Called if an error occurs.
 // Prints error and waits on a key press.
 // Then aborts.
-void Error(char* area, char* error) {
+void Error(const __FlashStringHelper* area, const __FlashStringHelper* error) {
   lcd.clear();
   lcd.print(area);
   lcd.setCursor(0,1);
@@ -203,9 +203,9 @@ void Error(char* area, char* error) {
 // Press "KEY_TEST" to leave.
 void testPhotoSensor() {
   lcd.clear();
-  lcd.print("Button:");
+  lcd.print(F("Button:"));
   lcd.setCursor(0,1);
-  lcd.print("Sensor:");
+  lcd.print(F("Sensor:"));
   int outpValue = LOW;
   while(!abortAll) {
     // Stimulate button
@@ -215,9 +215,9 @@ void testPhotoSensor() {
     // Print button state
     lcd.setCursor(8, 0);
     if(outpValue)
-      lcd.print("ON ");
+      lcd.print(F("ON "));
     else
-      lcd.print("OFF");
+      lcd.print(F("OFF"));
       
     // Wait for potential lag time
     waitMs(150); if(isAbort()) return;
@@ -228,7 +228,7 @@ void testPhotoSensor() {
       int value = analogRead(IN_PIN_PHOTO_SENSOR);
       lcd.setCursor(8, 1);
       lcd.print(value);
-      lcd.print("   ");
+      lcd.print(F("   "));
       waitMs(500); if(isAbort()) return;
     }
 
@@ -374,12 +374,12 @@ int measureLag(int inputPin, int outpValue, struct MinMax range, bool invertRang
   }
   else if(accuracyOvrflw) {    // Assure that measuremnt accuracy is good enough
     // Error
-    Error("Error:", "Accuracy >= XXms");
+    Error(F("Error:"), F("Accuracy >= XXms"));
   }
   else if(counterOvrflw) {    // Overflow?
     // Interrupt pending bit set -> Overflow happened.
     // This means 4.19 seconds elapsed with no signal.
-    Error("Error:", "No signal");
+    Error(F("Error:"), F("No signal"));
   }
 
   // Calculate time from counter value.
@@ -404,7 +404,7 @@ int measureLag(int inputPin, int outpValue, struct MinMax range, bool invertRang
 void measurePhotoSensor() {
   // Calibrate
   lcd.clear();
-  lcd.print("Calib. Photo S.");
+  lcd.print(F("Calib. Photo S."));
   // Simulate joystick button press
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
   waitMs(500); if(isAbort()) return;
@@ -414,7 +414,7 @@ void measurePhotoSensor() {
   // Print
   lcd.setCursor(0,1);
   lcd.print(buttonOnLight.min);
-  lcd.print("-");
+  lcd.print(F("-"));
   lcd.print(buttonOnLight.max);
   // Simulate joystick button unpress
   digitalWrite(OUT_PIN_BUTTON, LOW); 
@@ -425,26 +425,26 @@ void measurePhotoSensor() {
   // Print
   lcd.setCursor(0,1);
   lcd.print(buttonOffLight.min);
-  lcd.print("-");
+  lcd.print(F("-"));
   lcd.print(buttonOffLight.max);
-  lcd.print("         ");
+  lcd.print(F("         "));
   waitMs(1000); if(isAbort()) return;
 
   // Check values. They should not overlap.
   bool overlap = (buttonOnLight.max >= buttonOffLight.min && buttonOnLight.min <= buttonOffLight.max);
   if(overlap) {
     // Error
-    Error("Calibr. Error:", "Ranges overlap");
+    Error(F("Calibr. Error:"), F("Ranges overlap"));
     return;
   }
   
   // Print
   lcd.clear();
-  lcd.print("Start testing...");
+  lcd.print(F("Start testing..."));
   waitMs(1000); if(isAbort()) return;
   lcd.clear();
   lcd.setCursor(0,1);
-  lcd.print("Lag: ");
+  lcd.print(F("Lag: "));
 
   // Measure a few cycles
   struct MinMax timeRange = {1023, 0};
@@ -453,16 +453,16 @@ void measurePhotoSensor() {
     // Print
     lcd.setCursor(0,0);
     lcd.print(i);
-    lcd.print("/");
+    lcd.print(F("/"));
     lcd.print(COUNT_CYCLES);
-    lcd.print(": ");
+    lcd.print(F(": "));
     
     // Wait until input (photo sensor) changes
     int time = measureLag(IN_PIN_PHOTO_SENSOR, HIGH, buttonOffLight, true);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
-    lcd.print("ms     ");
+    lcd.print(F("ms     "));
     
     // Wait until input (photo sensor) changes
     measureLag(IN_PIN_PHOTO_SENSOR, LOW, buttonOffLight);
@@ -484,10 +484,10 @@ void measurePhotoSensor() {
     lcd.setCursor(5,1);
     if(timeRange.min != timeRange.max) {
       lcd.print(timeRange.min);
-      lcd.print("-");
+      lcd.print(F("-"));
     }
     lcd.print(timeRange.max);
-    lcd.print("ms     ");
+    lcd.print(F("ms     "));
 
     // Calculate average
     avg += time;
@@ -496,10 +496,10 @@ void measurePhotoSensor() {
   // Print average:
   avg /= COUNT_CYCLES;
   lcd.setCursor(0,0);
-  lcd.print("Avg Phot: ");
+  lcd.print(F("Avg Phot: "));
   lcd.print((int)avg);
-  lcd.print("ms     ");
-  
+  lcd.print(F("ms     "));
+ 
   // Wait on key press.
   while(getLcdKey() != LCD_KEY_NONE);
 }
@@ -517,7 +517,7 @@ void measurePhotoSensor() {
 void measureSVGA() {
   // Calibrate
   lcd.clear();
-  lcd.print("Calibrate SVGA");
+  lcd.print(F("Calibrate SVGA"));
   // Simulate joystick button press
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
   waitMs(500); if(isAbort()) return;
@@ -536,20 +536,20 @@ void measureSVGA() {
   // Print
   lcd.setCursor(0,1);
   lcd.print(buttonOffSVGA.max);
-  lcd.print("         ");
+  lcd.print(F("         "));
   waitMs(1000); if(isAbort()) return;
 
   // Print diff
   lcd.setCursor(0,1);
-  lcd.print("Diff=");
+  lcd.print(F("Diff="));
   lcd.print(buttonOnSVGA.max-buttonOffSVGA.max);
-  lcd.print("         ");
+  lcd.print(F("         "));
   waitMs(1000); if(isAbort()) return;
 
   // Check values. They should differ clearly. (Should be around 100.)
   if(buttonOnSVGA.max-buttonOffSVGA.max < 20) {
     // Error
-    Error("Calibr. Error:", "Signal too weak");
+    Error(F("Calibr. Error:"), F("Signal too weak"));
     return;
   }
   
@@ -560,11 +560,11 @@ void measureSVGA() {
   
   // Print
   lcd.clear();
-  lcd.print("Start testing...");
+  lcd.print(F("Start testing..."));
   waitMs(1000); if(isAbort()) return;
   lcd.clear();
   lcd.setCursor(0,1);
-  lcd.print("Lag: ");
+  lcd.print(F("Lag: "));
 
   // Measure a few cycles
   struct MinMax timeRange = {1023, 0};
@@ -573,16 +573,16 @@ void measureSVGA() {
     // Print
     lcd.setCursor(0,0);
     lcd.print(i);
-    lcd.print("/");
+    lcd.print(F("/"));
     lcd.print(COUNT_CYCLES);
-    lcd.print(": ");
+    lcd.print(F(": "));
     
     // Wait until input (photo sensor) changes
     int time = measureLag(IN_PIN_SVGA, HIGH, buttonOffSVGA, true);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
-    lcd.print("ms     ");
+    lcd.print(F("ms     "));
     
     // Wait until input (photo sensor) changes
     measureLag(IN_PIN_SVGA, LOW, buttonOffSVGA);
@@ -604,10 +604,10 @@ void measureSVGA() {
     lcd.setCursor(5,1);
     if(timeRange.min != timeRange.max) {
       lcd.print(timeRange.min);
-      lcd.print("-");
+      lcd.print(F("-"));
     }
     lcd.print(timeRange.max);
-    lcd.print("ms     ");
+    lcd.print(F("ms     "));
 
     // Calculate average
     avg += time;
@@ -616,9 +616,9 @@ void measureSVGA() {
   // Print average:
   avg /= COUNT_CYCLES;
   lcd.setCursor(0,0);
-  lcd.print("Avg SVGA: ");
+  lcd.print(F("Avg SVGA: "));
   lcd.print((int)avg);
-  lcd.print("ms     ");
+  lcd.print(F("ms     "));
   
   // Wait on key press.
   while(getLcdKey() != LCD_KEY_NONE);
