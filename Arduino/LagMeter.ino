@@ -71,7 +71,8 @@ enum {
 // Define used Keys.
 const int KEY_TEST_PHOTO_BUTTON = LCD_KEY_LEFT;
 const int KEY_MEASURE_PHOTO = LCD_KEY_DOWN;
-const int KEY_MEASURE_SVGA = LCD_KEY_RIGHT;
+const int KEY_MEASURE_SVGA = LCD_KEY_UP;
+const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_RIGHT;
 
 
 
@@ -626,6 +627,169 @@ void measureSVGA() {
 
 
 
+// Calibrates photo sensor and SVGA output and measure the
+// latency betwenn SVGA out and photo sensor signal on monitor.
+// Uses the blue-output of SVGA (but you could also use red or green).
+// Calibration: 
+//   Simulate joystick button press -> measure svga brightness, i.e. max signal.
+//   Simulate joystick button unpress -> measure svga darkness, i.e. max signal.
+//   Simulate joystick button press -> measure min/max photo
+//   sensor value.
+//   Simulate joystick button unpress -> measure min/max photo
+//   sensor value.
+// Measurement:
+//   Simulate joystick button press -> measure time when svga value changes
+//   to time when phot sensor changes.
+void measureSvgaToMonitor() {
+  // Calibrate
+  lcd.clear();
+  lcd.print(F("Calibrate SVGA"));
+  // Simulate joystick button press
+  digitalWrite(OUT_PIN_BUTTON, HIGH); 
+  waitMs(500); if(isAbort()) return;
+  // Get max svga value
+  struct MinMax buttonOnSVGA = getMaxMinAnalogInP(IN_PIN_SVGA, 1500);
+  if(isAbort()) return;
+  // Print
+  lcd.setCursor(0,1);
+  lcd.print(buttonOnSVGA.max);
+  // Simulate joystick button unpress
+  digitalWrite(OUT_PIN_BUTTON, LOW); 
+  waitMs(500); if(isAbort()) return;
+  // Get max/min light value
+  struct MinMax buttonOffSVGA = getMaxMinAnalogInP(IN_PIN_SVGA, 1500);
+  if(isAbort()) return;
+  // Print
+  lcd.setCursor(0,1);
+  lcd.print(buttonOffSVGA.max);
+  lcd.print(F("         "));
+  waitMs(1000); if(isAbort()) return;
+
+  // Print diff
+  lcd.setCursor(0,1);
+  lcd.print(F("Diff="));
+  lcd.print(buttonOnSVGA.max-buttonOffSVGA.max);
+  lcd.print(F("         "));
+  waitMs(1000); if(isAbort()) return;
+  
+  // Check values. They should differ clearly. (Should be around 100.)
+  if(buttonOnSVGA.max-buttonOffSVGA.max < 20) {
+    // Error
+    Error(F("Calibr. Error:"), F("Signal too weak"));
+    return;
+  }
+
+
+  // Calibrate
+  lcd.clear();
+  lcd.print(F("Calib. Photo S."));
+  // Simulate joystick button press
+  digitalWrite(OUT_PIN_BUTTON, HIGH); 
+  waitMs(500); if(isAbort()) return;
+  // Get max/min light value
+  struct MinMax buttonOnLight = getMaxMinAnalogInP(IN_PIN_PHOTO_SENSOR, 1500);
+  if(isAbort()) return;
+  // Print
+  lcd.setCursor(0,1);
+  lcd.print(buttonOnLight.min);
+  lcd.print(F("-"));
+  lcd.print(buttonOnLight.max);
+  // Simulate joystick button unpress
+  digitalWrite(OUT_PIN_BUTTON, LOW); 
+  waitMs(500); if(isAbort()) return;
+  // Get max/min light value
+  struct MinMax buttonOffLight = getMaxMinAnalogInP(IN_PIN_PHOTO_SENSOR, 1500);
+  if(isAbort()) return;
+  // Print
+  lcd.setCursor(0,1);
+  lcd.print(buttonOffLight.min);
+  lcd.print(F("-"));
+  lcd.print(buttonOffLight.max);
+  lcd.print(F("         "));
+  waitMs(1000); if(isAbort()) return;
+
+  // Check values. They should not overlap.
+  bool overlap = (buttonOnLight.max >= buttonOffLight.min && buttonOnLight.min <= buttonOffLight.max);
+  if(overlap) {
+    // Error
+    Error(F("Calibr. Error:"), F("Ranges overlap"));
+    return;
+  }
+
+  
+  // Calculate measure ranges 
+  buttonOnSVGA.min = (buttonOnSVGA.max+buttonOffSVGA.max)/2;
+  buttonOnSVGA.max = 1023;
+  buttonOffSVGA.min = 0;
+  
+  // Print
+  lcd.clear();
+  lcd.print(F("Start testing..."));
+  waitMs(1000); if(isAbort()) return;
+  lcd.clear();
+  lcd.setCursor(0,1);
+  lcd.print(F("Lag: "));
+
+  // Measure a few cycles
+  struct MinMax timeRange = {1023, 0};
+  float avg = 0.0;
+  for(int i=1; i<=COUNT_CYCLES; i++) {
+    // Print
+    lcd.setCursor(0,0);
+    lcd.print(i);
+    lcd.print(F("/"));
+    lcd.print(COUNT_CYCLES);
+    lcd.print(F(": "));
+    
+    // Wait until input (photo sensor) changes
+    int time = measureLag(IN_PIN_SVGA, HIGH, buttonOffSVGA, true);
+    if(isAbort()) return;
+    // Output result: 
+    lcd.print(time);
+    lcd.print(F("ms     "));
+    
+    // Wait until input (photo sensor) changes
+    measureLag(IN_PIN_SVGA, LOW, buttonOffSVGA);
+    if(isAbort()) return;
+
+    // Wait a random time to make sure we really get different results.
+    int waitRnd = random(100, 150);
+    //lcd.setCursor(0,0);
+    //lcd.print(waitRnd);
+    waitMs(waitRnd); if(isAbort()) return;
+
+    // Calculate max/min.
+    if(time > timeRange.max)
+      timeRange.max = time;
+    if(time < timeRange.min)
+      timeRange.min = time;
+
+    // Print min/max result
+    lcd.setCursor(5,1);
+    if(timeRange.min != timeRange.max) {
+      lcd.print(timeRange.min);
+      lcd.print(F("-"));
+    }
+    lcd.print(timeRange.max);
+    lcd.print(F("ms     "));
+
+    // Calculate average
+    avg += time;
+  }
+
+  // Print average:
+  avg /= COUNT_CYCLES;
+  lcd.setCursor(0,0);
+  lcd.print(F("Avg SVGA: "));
+  lcd.print((int)avg);
+  lcd.print(F("ms     "));
+  
+  // Wait on key press.
+  while(getLcdKey() != LCD_KEY_NONE);
+}
+
+
+
 
 //const int BUTTON_PIN =  12;
 //int out = LOW;
@@ -674,6 +838,9 @@ return;
     case KEY_MEASURE_SVGA:
       measureSVGA();
       break;
+    case KEY_MEASURE_SVGA_TO_PHOTO:
+      measureSvgaToMonitor();
+      break;   
   }
 }
 
