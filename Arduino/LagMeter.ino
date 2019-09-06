@@ -269,6 +269,7 @@ void waitMsInput(int inputPin, int outpValue, struct MinMax range, int waitTime)
   // Wait
   int time;
   int startTime = millis();
+  int watchdogTime = startTime;
   do {
     // Get input value 
     int value = analogRead(inputPin);
@@ -278,9 +279,16 @@ void waitMsInput(int inputPin, int outpValue, struct MinMax range, int waitTime)
       startTime = millis();
     }
     // Get time
-  	time = millis() - startTime;
+    int currTime = millis();
+  	time = currTime - startTime;
     if(isAbort())
       return;
+    // Check if waited too long (4 secs)
+    if(currTime-watchdogTime > 4000) {
+      // Error
+      Error(F("Error:"), F("Signal wrong"));
+      break;
+    }
   } while(time < waitTime);
 }
 

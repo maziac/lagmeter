@@ -56,14 +56,18 @@ check_keyboard:
     ;  Clear unused bits
     and 00011111b
     ; Compare with previous keys
-    cp (hl)
-    jr z,check_keyboard
+    ld e,a  ; save value
+    xor (hl)
+    jr z,check_keyboard  ; Jump if no change
 
     ; Store
-    ld (hl),a
+    ld (hl),e
 
-    ; Check if key '9' pressed (to change the color)
+    ; Check if key '9' has changed and was pressed (to change the color)
     bit 1,a
+    jr z,no_color_change
+
+    bit 1,e
     jr z,no_color_change
 
     ; increment color
@@ -71,6 +75,7 @@ check_keyboard:
     inc (hl)
     ld a,00000111b
     and (hl)
+    ld (hl),a
     jr nz,no_col_inc
     ; Avoid BLACK
     inc (hl)
@@ -79,8 +84,12 @@ no_col_inc:
     jr main_loop
 no_color_change:
 
-    ; Check if key '0' pressed or released
+    ; Check if key '0' has changed
     bit 0,a
+    jr z,main_loop   ; Jump if not changed
+
+    ; Check if key '0' pressed or released
+    bit 0,e
 
     jr z,black  ; Jump if no key pressed
 
