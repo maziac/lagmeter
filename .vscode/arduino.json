@@ -1,6 +1,6 @@
 {
     "board": "arduino:avr:uno",
-    "sketch": "Arduino/LagMeter.ino",
+    "sketch": "Arduino/LagMeter/LagMeter.ino",
     "port": "/dev/cu.usbserial-14630",
-    "output": "Arduino/build"
+    "output": "Arduino/LagMeter/build"
 }

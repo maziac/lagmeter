@@ -1,50 +1,12 @@
-/*
-Lag-Meter:
-A device to measure the total lag (from USB controller to monitor output).
+#include "Utilities.h"
+#include "Measure.h"
+#include "Arduino.h"
 
-
-Other timings:
-Reed Relais SIL 7271-D 5V:
-From own measurements:
-- Switch bouncing: 40us
-- Delay: 5V Out to relais switching: < 250us
-
-
-Measurement accuracy:
-The code is not optimized, i.e. no assembler code is used for measurement.
-But the C-code has an internal check for accuracy.
-It aborts if accuracy gets too bad.
-Current accuracy is < 1ms.
-I also measured the lag directly with a LED connected to the relais. The 
-measured lag was 1ms in 100 trials.
-
-
-Note: The measurement should also work with an 8MHz CPU. All the time adjustmeents are done
-so that the correct time should be displayed.
-However it was tested only with a 16MHz CPU.
-*/
-
-#include <SPI.h>
-#include <LiquidCrystal.h>
-
-
-// The SW version.
-#define SW_VERSION "0.5"
-
-// Define this for comarison measurements with an oscilloscope or a camera.
-#define OUT_PIN_BUTTON_COMPARE_TIME 3
-
-
-
-// Structure to return min/max values.
-struct MinMax {
-  int min;
-  int max;
-};
-
+///////////////////////////////////////////////////////////////////
+// Pin configuration:
 
 // Simulation of the joystick button.
-const int OUT_PIN_BUTTON =  8;
+const int OUT_PIN_BUTTON = 8;
 
 // The analog input for the photo sensor.
 const int IN_PIN_PHOTO_SENSOR = 2;
@@ -52,143 +14,27 @@ const int IN_PIN_PHOTO_SENSOR = 2;
 // The analog input for the SVGA connector (blue, or red or green)
 const int IN_PIN_SVGA = 1;
 
-
 // Count of cycles to measure the input lag.
 const int COUNT_CYCLES = 100;
 
+// Define this for comparison measurements with an oscilloscope or a camera.
+//#define OUT_PIN_BUTTON_COMPARE_TIME 3
 
-// Defines for the available LCD keys.
-enum {
-  LCD_KEY_NONE,
-  LCD_KEY_SELECT,
-  LCD_KEY_LEFT,
-  LCD_KEY_RIGHT,
-  LCD_KEY_UP,
-  LCD_KEY_DOWN
-};
+///////////////////////////////////////////////////////////////////
 
 
-// Define used Keys.
-const int KEY_TEST_PHOTO_BUTTON = LCD_KEY_LEFT;
-const int KEY_MEASURE_PHOTO = LCD_KEY_DOWN;
-const int KEY_MEASURE_SVGA = LCD_KEY_UP;
-const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_RIGHT;
-
-
-
-// Is set if a function is (forcefully) left.
-// E.g. because of a keypress (aboort.
-// The menu starts at the beginning afterwards.
-bool abortAll = true;
-
-
-//LiquidCrystal lcd(8, 13, 9, 4, 5, 6, 7); // LCD pin configuration.
-//LiquidCrystal lcd(8, 3, 2, 4, 5, 6, 7); // LCD pin configuration.
-LiquidCrystal lcd(19, 17, 18, 4, 5, 6, 7); // LCD pin configuration.
-
-
-
-// The setup routine.
-void setup() {
+// Initializes the pins.
+void setupMeasurement() {
   // Setup GPIOs
   pinMode(OUT_PIN_BUTTON, OUTPUT);
   digitalWrite(OUT_PIN_BUTTON, LOW); 
-  pinMode(2, INPUT_PULLUP);
+  pinMode(IN_PIN_PHOTO_SENSOR, INPUT);
+  pinMode(IN_PIN_SVGA, INPUT);
 
 #ifdef OUT_PIN_BUTTON_COMPARE_TIME
   pinMode(OUT_PIN_BUTTON_COMPARE_TIME, OUTPUT);
   digitalWrite(OUT_PIN_BUTTON_COMPARE_TIME, LOW); 
 #endif
-
-  // Random seed now depending on photo sensor value (should be somewhat random)
-  randomSeed(analogRead(2));
-
-
-  // Setup LCD
-  lcd.begin(16, 2);
-  lcd.clear();
-  
-  // Debug communication
-  Serial.begin(115200);
-  Serial.println(F("Serial connection up!"));
-
-}
-
-
-// Prints the main menu.
-void printMainMenu() {
-  // Print "Welcome"
-  lcd.clear();
-  lcd.print(F("** Lag-Meter  **"));
-  lcd.setCursor(0, 1);
-  lcd.print(F("v" SW_VERSION "," __DATE__));
-}
-
-
-// Returns the pressed key (or LCD_KEY_NONE).
-int getLcdKey() {
-  int x = analogRead(0);
-  // Return immediately if nothing is pressed
-  if (x >= 800) 
-    return LCD_KEY_NONE;
-  
-  waitLcdKeyRelease();
-
-  // Return
-  if (x < 60)
-    return LCD_KEY_RIGHT;
-  if (x < 200) 
-    return LCD_KEY_UP;
-  if (x < 400) 
-    return LCD_KEY_DOWN;
-  if (x < 600) 
-    return LCD_KEY_LEFT;
-  return LCD_KEY_SELECT;
-}
-
-
-// Waits on release of key press.
-void waitLcdKeyRelease() {
-  // Some key has been pressed
-  delay(100);	// poor man's debounce
-  // Wait until released
-  while(analogRead(0) < 800);
-  delay(100); // debounce
-}
-
-
-// isAbort: returns true if any key is pressed
-// and sets 'abortAll' to true.
-bool isAbort() {
-  if(!abortAll)
-    if(getLcdKey() != LCD_KEY_NONE) 
-        abortAll = true;
-  return abortAll;
-}
-
-
-// Waits for a certain time or abort (keypress).
-void waitMs(int waitTime) {
-  int time;
-  int startTime = millis();
-  do {
-  	time = millis() - startTime;
-    if(isAbort())
-      return;
-  } while(time < waitTime);
-}
-
-
-// Called if an error occurs.
-// Prints error and waits on a key press.
-// Then aborts.
-void Error(const __FlashStringHelper* area, const __FlashStringHelper* error) {
-  lcd.clear();
-  lcd.print(area);
-  lcd.setCursor(0,1);
-  lcd.print(error);
-  while(getLcdKey() == LCD_KEY_NONE);
-  abortAll = true;
 }
 
 
@@ -225,14 +71,12 @@ void testPhotoSensor() {
       lcd.print(F("   "));
       waitMs(500); if(isAbort()) return;
     }
-
   }
-  //abortAll = true;
 }
 
 
 // Returns the min/max photo sensor values for a given time frame.
-struct MinMax getMaxMinAnalogInP(int inputPin, int measTime) {
+struct MinMax getMaxMinAnalogIn(int inputPin, int measTime) {
   struct MinMax value;
   value.min = value.max = analogRead(inputPin);
   int time;
@@ -521,7 +365,7 @@ void measurePhotoSensor() {
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOnLight = getMaxMinAnalogInP(IN_PIN_PHOTO_SENSOR, 1500);
+  struct MinMax buttonOnLight = getMaxMinAnalogIn(IN_PIN_PHOTO_SENSOR, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -532,7 +376,7 @@ void measurePhotoSensor() {
   digitalWrite(OUT_PIN_BUTTON, LOW); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOffLight = getMaxMinAnalogInP(IN_PIN_PHOTO_SENSOR, 1500);
+  struct MinMax buttonOffLight = getMaxMinAnalogIn(IN_PIN_PHOTO_SENSOR, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -630,7 +474,7 @@ void measureSVGA() {
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
   waitMs(500); if(isAbort()) return;
   // Get max svga value
-  struct MinMax buttonOnSVGA = getMaxMinAnalogInP(IN_PIN_SVGA, 1500);
+  struct MinMax buttonOnSVGA = getMaxMinAnalogIn(IN_PIN_SVGA, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -639,7 +483,7 @@ void measureSVGA() {
   digitalWrite(OUT_PIN_BUTTON, LOW); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOffSVGA = getMaxMinAnalogInP(IN_PIN_SVGA, 1500);
+  struct MinMax buttonOffSVGA = getMaxMinAnalogIn(IN_PIN_SVGA, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -751,7 +595,7 @@ void measureSvgaToMonitor() {
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
   waitMs(500); if(isAbort()) return;
   // Get max svga value
-  struct MinMax buttonOnSVGA = getMaxMinAnalogInP(IN_PIN_SVGA, 1500);
+  struct MinMax buttonOnSVGA = getMaxMinAnalogIn(IN_PIN_SVGA, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -760,7 +604,7 @@ void measureSvgaToMonitor() {
   digitalWrite(OUT_PIN_BUTTON, LOW); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOffSVGA = getMaxMinAnalogInP(IN_PIN_SVGA, 1500);
+  struct MinMax buttonOffSVGA = getMaxMinAnalogIn(IN_PIN_SVGA, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -790,7 +634,7 @@ void measureSvgaToMonitor() {
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOnLight = getMaxMinAnalogInP(IN_PIN_PHOTO_SENSOR, 1500);
+  struct MinMax buttonOnLight = getMaxMinAnalogIn(IN_PIN_PHOTO_SENSOR, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -801,7 +645,7 @@ void measureSvgaToMonitor() {
   digitalWrite(OUT_PIN_BUTTON, LOW); 
   waitMs(500); if(isAbort()) return;
   // Get max/min light value
-  struct MinMax buttonOffLight = getMaxMinAnalogInP(IN_PIN_PHOTO_SENSOR, 1500);
+  struct MinMax buttonOffLight = getMaxMinAnalogIn(IN_PIN_PHOTO_SENSOR, 1500);
   if(isAbort()) return;
   // Print
   lcd.setCursor(0,1);
@@ -885,62 +729,4 @@ void measureSvgaToMonitor() {
   // Wait on key press.
   while(getLcdKey() != LCD_KEY_NONE);
 }
-
-
-
-
-//const int BUTTON_PIN =  12;
-//int out = LOW;
-
-// Main loop.
-void loop() {
-/*
-  pinMode(BUTTON_PIN, OUTPUT);
-digitalWrite(BUTTON_PIN, HIGH);
-delay(100);
-digitalWrite(BUTTON_PIN, LOW);
-delay(100);
-return;
-*/
-
-  /*
-  //Serial.println(millis());
-  //if(TCNT0 < 1000)
-    Serial.println(TCNT0);
-  return;
-  */
-
-  /*
-  Serial.println(out);
-  digitalWrite(OUT_PIN_BUTTON, out);
-  delay(10);
-  out = ~out;
-  return;
-  */
-  
-  
-  if(abortAll) {
-    printMainMenu();
-    abortAll = false;
-  }
-  
-  int key = getLcdKey();
-  
-  switch(key) {
-    case KEY_TEST_PHOTO_BUTTON:
-	    testPhotoSensor();
-      break;
-    case KEY_MEASURE_PHOTO:
-      measurePhotoSensor();
-      break;
-    case KEY_MEASURE_SVGA:
-      measureSVGA();
-      break;
-    case KEY_MEASURE_SVGA_TO_PHOTO:
-      measureSvgaToMonitor();
-      break;   
-  }
-}
-
-
 
