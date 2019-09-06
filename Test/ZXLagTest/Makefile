@@ -13,7 +13,7 @@ SNA_OBJ = $(PROJ).re.obj
 SNA_ASM = $(PROJ).re.asm
 MAIN_ASM = main.asm
 MAIN_OBJ = main.obj
-ASM_FILES = $(MAIN_ASM) clearscreen.asm fill.asm utilities.asm
+ASM_FILES = $(MAIN_ASM) clearscreen.asm fill.asm
 LABELS_OUT = $(PROJ).labels
 LIST_OUT = $(PROJ).list
 

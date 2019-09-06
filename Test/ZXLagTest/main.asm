@@ -13,16 +13,14 @@ PORT_IF2_JOY_0: equ 0xEFFE ; Keys: 6, 7, 8, 9, 0
 PORT_BORDER:    equ 0x00FE
 
 
-    ORG 0x4000
-    defs 0x6000 - $    ; move after screen area
-screen_top: defb    0   ; WPMEM
-    
+    ORG 0x8000
+ 
 
 
 ;===========================================================================
 ; Include modules
 ;===========================================================================
-    include "utilities.asm"
+
     include "fill.asm"
     include "clearscreen.asm"
 
@@ -48,11 +46,7 @@ main:
     out (c),a
 
     ; Init
-lbl1:
-    ld hl,fill_colors
-    ld (fill_colors_ptr),hl
-    ld de,COLOR_SCREEN
-    
+    ;call set_backg_paper_color
     
 main_loop:
     ld hl,last_keys
@@ -70,31 +64,56 @@ check_keyboard:
 
     ; Store
     ld (hl),a
-    or a    ; Check if key pressed or released
 
-    ld a,BLACK  ; color = black
-    jr z,no_press  ; Jump if no key pressed
-    ; Some key pressed
-    ld a,WHITE
-no_press:
- if 0  ; Disable border
-    ; Set border
-    ld bc,PORT_BORDER
-    out (c),a
- endif
+    ; Check if key '9' pressed (to change the color)
+    bit 1,a
+    jr z,no_color_change
+
+    ; increment color
+    ld hl,last_color
+    inc (hl)
+    ld a,00000111b
+    and (hl)
+    jr nz,no_col_inc
+    ; Avoid BLACK
+    inc (hl)
+no_col_inc:
+    call set_backg_paper_color
+    jr main_loop
+no_color_change:
+
+    ; Check if key '0' pressed or released
+    bit 0,a
+
+    jr z,black  ; Jump if no key pressed
+
+    ; Some key pressed:
+    ; Set background color
+    call set_backg_paper_color
+    jr main_loop
+
+black:
+    ; Clear background
+    call clear_backg
+    jr main_loop
+
+
+; Sets the background paper color.
+set_backg_paper_color:
+    ; load color
+    ld a,(last_color)
     ; Convert color to paper color
     rlca
     rlca
     rlca 
-    ; Add brightness
-    ;or BRIGHT ; no brightness otherwise border and screen have different brightness
-    ; Set background color
-    call set_backg
-    jr main_loop
+    jp set_backg
 
 
 ; Used to store the last keypress.
 last_keys: defb 0FFh
+
+; Used to store the last used color.
+last_color: defb WHITE
 
 
 ;===========================================================================
