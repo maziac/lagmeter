@@ -139,12 +139,10 @@ void waitMsInput(int inputPin, int outpValue, struct MinMax range, int waitTime)
     
 // Waits until the photo sensor (or SVGA value) value gets into range.
 // @param inputPin Pin from which the analog input is read. Photo sensor or SVGA.
-// @param outpValue Use HIGH or LOW for the output pin.
 // @param range The range to compare the inputPin value to.
-// @param invertRange Use true to invert the 'range'.
 // @param inputPinWait (Optional) If given: wait for inputPinWait value to get in 'rangeWait' before starting the measurement.
 // @param rangeWait (optional) The range to compare the inputPinWait value to.
-int measureLag(int inputPin, int outpValue, struct MinMax range, bool invertRange = false, int inputPinWait = -1, struct MinMax rangeWait = {}) {
+int measureLag(int inputPin, struct MinMax range, int inputPinWait = -1, struct MinMax rangeWait = {}) {
   int key = 1023;
   unsigned int tcount1 = 0;
   bool accuracyOvrflw = false;
@@ -152,10 +150,8 @@ int measureLag(int inputPin, int outpValue, struct MinMax range, bool invertRang
   bool keyPressed = false;
 
   // Add another small safety margin if range is inverted
-  if(invertRange) {
-    range.min--;
-    range.max++;
-  }
+  range.min--;
+  range.max++;
 
   // Turnoff interrupts.
   noInterrupts();
@@ -182,7 +178,7 @@ int measureLag(int inputPin, int outpValue, struct MinMax range, bool invertRang
   TCNT2 = tcnt2Value;
   TCNT1 = 0;
   // Simulate joystick button
-  digitalWrite(OUT_PIN_BUTTON, outpValue); 
+  digitalWrite(OUT_PIN_BUTTON, HIGH); 
 
 int t1 = -1;
 int t2 = -1;
@@ -195,7 +191,7 @@ int p2 = -1;
     while(true) {
       // Check range of wait-input-pin 
       int value = analogRead(inputPinWait);
-      // Check for normal range
+      // Check for range
       if(value >= rangeWait.min && value <= rangeWait.max) {
         // Restart measurement
         TCNT2 = tcnt2Value;
@@ -239,21 +235,12 @@ int p2 = -1;
   while(true) {
     // Check range of input pin
     int value = analogRead(inputPin);
-    if(invertRange) {
-      // Check for inverted range
-      if(value < range.min || value > range.max) {
+    // Check for inverted range
+    if(value < range.min || value > range.max) {
         tcount1 = TCNT1;
         t2 = TCNT1;
         p2 = value;
         break;  
-      }
-    }
-    else {
-      // Check for normal range
-      if(value >= range.min && value <= range.max) {
-        tcount1 = TCNT1;
-        break;  
-      }
     }
 
     // Assure that measurement accuracy is good enough
@@ -343,7 +330,7 @@ if((int)tcount1l < 5) {
 // @param rangeWait The range for the SVGA value.
 // @return the time.
 int measureLagDiff(struct MinMax range, struct MinMax rangeWait) {
-  return measureLag(IN_PIN_PHOTO_SENSOR, HIGH, range, true, IN_PIN_SVGA, rangeWait);
+  return measureLag(IN_PIN_PHOTO_SENSOR, range, IN_PIN_SVGA, rangeWait);
 }
 
 
@@ -414,7 +401,7 @@ void measurePhotoSensor() {
     lcd.print(F(": "));
     
     // Wait until input (photo sensor) changes
-    int time = measureLag(IN_PIN_PHOTO_SENSOR, HIGH, buttonOffLight, true);
+    int time = measureLag(IN_PIN_PHOTO_SENSOR, buttonOffLight);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
@@ -530,7 +517,7 @@ void measureSVGA() {
     lcd.print(F(": "));
     
     // Wait until input (svga) changes
-    int time = measureLag(IN_PIN_SVGA, HIGH, buttonOffSVGA, true);
+    int time = measureLag(IN_PIN_SVGA, buttonOffSVGA);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
