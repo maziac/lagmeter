@@ -44,9 +44,6 @@ main:
     ld bc,PORT_BORDER
     ld a,BLACK
     out (c),a
-
-    ; Init
-    ;call set_backg_paper_color
     
 main_loop:
     ld hl,last_keys
@@ -106,7 +103,12 @@ set_backg_paper_color:
     rlca
     rlca
     rlca 
-    jp set_backg
+    ;call set_backg
+    ; Set only small part
+    ld bc,2*32  ; 2 lines
+    ld hl,COLOR_SCREEN
+    call fill_memory
+    ret	
 
 
 ; Used to store the last keypress.
