@@ -485,6 +485,9 @@ void handleUsblag() {
       time = 0;
       Serial.println("Launching test");
       nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
+      // Use USB polling interval of 1ms.
+      Hid.overrideInterval = 1;
+      xbox.overrideInterval = 1;
       break;
   }
   
