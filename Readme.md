@@ -90,8 +90,7 @@ Note: You don't need to wire the LCD and buttons if you use the LCD Keypad shiel
 - LCD Keypad Shield
 - Reed Relais SIL 7271-D 5V
 - Phototransistor BPX 38-3 OSO
-- R=22k
-- C=22pF
+- R=470k
 - USB Host Shield v2.0
 
 
@@ -263,6 +262,7 @@ For the BenQ w???
     - BenQ introduces a lag of 9-12ms
     - EIZO introduces a lag of 9-12ms
     
+- SVGA out vs. HDMI out: The SVGA output is about 10ms slower than HDMI.
 
 See [spreadsheet](Docs/LagMeasurements.ods).
 
