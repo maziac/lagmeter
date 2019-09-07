@@ -115,7 +115,7 @@ const int KEY_MEASURE_PHOTO = LCD_KEY_DOWN;
 const int KEY_MEASURE_SVGA = LCD_KEY_UP;
 const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_RIGHT;
 // usblag:
-const int KEY_USBLAG_MEASURE = LCD_KEY_UP;
+const int KEY_USBLAG_MEASURE = LCD_KEY_DOWN;
 
 
 // Main lag testing mode.
@@ -148,12 +148,70 @@ void printUsblagMenu() {
 }
 
 
+// The number of samples for usblag
+const int USBLAG_CYCLES = 100;
+
+// Prints the measured time for usblag.
+// @param measuredTime The measured time in ms.
+extern int total;
+float usblagMin;
+float usblagMax;
+float usblagAvg;
+void printUsbLag(float measuredTime) {
+    // Init if first measurement 
+    if(total <= 1) {
+      lcd.setCursor(0,1);
+      lcd.print(F("Lag: "));
+      usblagMin = 1000000.0;
+      usblagMax = 0.0;
+    }
+    // Print cycle
+    lcd.setCursor(0,0);
+    lcd.print(total);
+    lcd.print(F("/"));
+    lcd.print(USBLAG_CYCLES);
+    lcd.print(F(": "));
+    // Print time
+    lcd.print(measuredTime);
+    lcd.print(F("ms     "));
+    
+    // Calculate max/min.
+    if(measuredTime > usblagMax)
+      usblagMax = measuredTime;
+    if(measuredTime < usblagMin)
+      usblagMin = measuredTime;
+
+    // Print min/max result
+    lcd.setCursor(5,1);
+    if(usblagMin != usblagMax) {
+      lcd.print(usblagMin);
+      lcd.print(F("-"));
+    }
+    lcd.print(usblagMax);
+    lcd.print(F("ms     "));
+
+    // Calculate average
+    usblagAvg += measuredTime;
+
+    // Print average if last value
+    if(total == USBLAG_CYCLES) {
+      // Print average:
+      usblagAvg /= USBLAG_CYCLES;
+      lcd.setCursor(0,0);
+      lcd.print(F("Avg: "));
+      lcd.print(usblagAvg);
+      lcd.print(F("ms         "));
+    }
+}
+
+
 #include "src/usblag/HIDDriver.h"
 #include "src/usblag/XInputDriver.h"
 #include <BTHID.h>
 #include "src/usblag/HIDReportMask.h"
 
-#define BUTTON_PIN 7
+
+#define BUTTON_PIN 8
 
 #define ENABLE_BT 0
 #define NAME_RETRIEVAL 1
@@ -244,7 +302,9 @@ class TimingManager {
     uint8_t doMeasure(uint16_t VID, uint16_t PID, uint8_t len, uint8_t *buf) {
       report_mask.apply_mask(len, buf);
       if (memcmp(buf, prevBuffer, len) != 0) {
-        Serial.println((micros()-time)/1000.0);
+        float measuredTime = (micros()-time)/1000.0;  // in ms
+        printUsbLag(measuredTime);
+        Serial.println(measuredTime);
         /*for (uint8_t i = 0 ; i < len; ++i) {
           print_hex(buf[i], 8);
         }
@@ -315,7 +375,6 @@ class HIDController : public HIDDriver, public TimingManager {
     uint8_t readBuf[EP_MAXPKTSIZE]; // General purpose buffer for input data
     HIDController(USB* usb): HIDDriver(usb), TimingManager(usb) {}
     uint8_t Init(uint8_t parent, uint8_t port, bool lowspeed) {
-      mainMode = USBLAG_MODE;
       uint8_t res = HIDDriver::Init(parent, port, lowspeed);
       if (res) return res;
       TimingManager::doInit(pollInterval, bAddress, &epInfo[hidInterfaces[0].epIndex[epInterruptInIndex]]);
@@ -327,11 +386,10 @@ class HIDController : public HIDDriver, public TimingManager {
         Serial.println("Warning! Multi-channel HID device not supported! Selecting only the first one.");
       }
       Serial.print("HID Controller initialized\n");
+      mainMode = USBLAG_MODE;
       return 0;
     }
     uint8_t Release() {
-      Serial.print("HID Controller released\n");
-      mainMode = LAGMETER_MODE;
       HIDDriver::Release();
       TimingManager::doPoll = false;
       return 0;
@@ -357,33 +415,31 @@ BTController btHid(&Btd);
 // SETUP
 void setup() {
 
-  pinMode(BUTTON_PIN, OUTPUT);
-
-  // Setup pins 
-  setupMeasurement();
-
-  // Random seed
-  randomSeed(1234);
-
-
-  // Setup LCD
-  lcd.begin(16, 2);
-  lcd.clear();
-  
   // Debug communication
   Serial.begin(115200);
   Serial.println(F("Serial connection up!"));
 
+  // Random seed
+  randomSeed(1234);
 
+  // Lagmeter initialization
+  pinMode(BUTTON_PIN, OUTPUT);
+  // Setup pins 
+  setupMeasurement();
+  // Setup LCD
+  lcd.begin(16, 2);
+  lcd.clear();
+  
+
+  // usblag initilization
   if (Usb.Init() == -1)
     Serial.println("OSC did not start.");
-
   delay(200);
-
   nextchange = micros() + 5000*1000;
 
-
-  mainMode = LAGMETER_MODE;
+  // Use USB polling interval of 1ms.
+  Hid.overrideInterval = 1;
+  xbox.overrideInterval = 1;
 }
 
 
@@ -417,8 +473,34 @@ void handleUsblag() {
   int key = getLcdKey();
   switch(key) {
     case KEY_USBLAG_MEASURE:
-      measurePhotoSensor();
+      lcd.clear();
+      lcd.println(F("Start testing..."));
+      // Wait for potential lag time
+      waitMs(1000); if(isAbort()) return;
+      lcd.clear();
+      // Start testing usb device measurement
+      button = false;
+      total = 0;
+      digitalWrite(BUTTON_PIN, button);
+      time = 0;
+      Serial.println("Launching test");
+      nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
       break;
+  }
+  
+  // Handle time
+  unsigned long current_time = micros();
+  if (current_time >= nextchange && total < USBLAG_CYCLES) {
+    if (time != 0) {
+      Error(F("USB device:"), F("Input dropped!"));
+      Serial.println("Input was dropped!");
+      return;
+    }
+    button = !button;
+    digitalWrite(BUTTON_PIN, button);
+    time = micros();
+    total++;
+    nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
   }
 }
 
@@ -426,6 +508,10 @@ void handleUsblag() {
 // MAIN LOOP
 int looptime = 0;
 void loop() {
+
+#if 01
+
+#if 01
   // Check if main mode changed.
   if(mainMode != prevMainMode) {
     prevMainMode = mainMode;
@@ -448,12 +534,15 @@ void loop() {
         break;  
   }
   
+ // Usb.Task();
+ #endif 
+ 
+//#else
 
+#if 01
+  Usb.Task();
+#else
   unsigned long current_time = micros();
-
-#if 0
-
-
   if (current_time >= nextchange && total < 1000) {
     if (time != 0) {
       Serial.println("Input was dropped!");
@@ -528,10 +617,13 @@ void loop() {
         break;
     }
   }
-  #endif
   
   Usb.Task();
   looptime = micros() - current_time;
+#endif
+  
+#endif
+
 }
 
 
