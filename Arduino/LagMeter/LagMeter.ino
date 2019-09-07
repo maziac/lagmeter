@@ -151,6 +151,10 @@ void printUsblagMenu() {
 // The number of samples for usblag
 const int USBLAG_CYCLES = 100;
 
+// Output pin to use for joystick button
+#define BUTTON_PIN 8
+
+
 // Prints the measured time for usblag.
 // @param measuredTime The measured time in ms.
 extern int total;
@@ -158,6 +162,8 @@ float usblagMin;
 float usblagMax;
 float usblagAvg;
 void printUsbLag(float measuredTime) {
+    if(total > USBLAG_CYCLES)
+      return;
     // Init if first measurement 
     if(total <= 1) {
       lcd.setCursor(0,1);
@@ -201,6 +207,8 @@ void printUsbLag(float measuredTime) {
       lcd.print(F("Avg: "));
       lcd.print(usblagAvg);
       lcd.print(F("ms         "));
+      // Make sure button is off
+      digitalWrite(BUTTON_PIN, false);
     }
 }
 
@@ -211,7 +219,7 @@ void printUsbLag(float measuredTime) {
 #include "src/usblag/HIDReportMask.h"
 
 
-#define BUTTON_PIN 8
+//#define BUTTON_PIN 8
 
 #define ENABLE_BT 0
 #define NAME_RETRIEVAL 1
@@ -436,20 +444,18 @@ void setup() {
     Serial.println("OSC did not start.");
   delay(200);
   nextchange = micros() + 5000*1000;
-
-  // Use USB polling interval of 1ms.
-  Hid.overrideInterval = 1;
-  xbox.overrideInterval = 1;
 }
 
 
 // Checks for keypresses for LagMeter mode.
 void handleLagMeter() {
+  // Check to print the menu
   if(abortAll) {
     printLagMeterMenu();
     abortAll = false;
   }
   
+  // Handle user input
   int key = getLcdKey();
   switch(key) {
     case KEY_TEST_PHOTO_BUTTON:
@@ -470,14 +476,25 @@ void handleLagMeter() {
 
 // Checks for keypresses for usblag mode.
 void handleUsblag() {
+  // Check to print the menu
+  if(abortAll) {
+    digitalWrite(BUTTON_PIN, false);
+    abortAll = false;
+    total = USBLAG_CYCLES+1;  // end
+    printUsblagMenu();
+  }
+
+  // Handle user input
   int key = getLcdKey();
+  if(key != LCD_KEY_NONE) {
+    // Check if we should abort the current measurement
+    if(total > 0 && total <= USBLAG_CYCLES) {
+      abortAll = true;
+      return;
+    }
+  }
   switch(key) {
     case KEY_USBLAG_MEASURE:
-      lcd.clear();
-      lcd.println(F("Start testing..."));
-      // Wait for potential lag time
-      waitMs(1000); if(isAbort()) return;
-      lcd.clear();
       // Start testing usb device measurement
       button = false;
       total = 0;
@@ -488,6 +505,13 @@ void handleUsblag() {
       // Use USB polling interval of 1ms.
       Hid.overrideInterval = 1;
       xbox.overrideInterval = 1;
+      // Infrom user
+      lcd.clear();
+      lcd.println(F("Start testing..."));
+      // Wait for potential lag time
+      waitMs(1000); 
+      lcd.clear();
+      if(isAbort()) return;
       break;
   }
   
