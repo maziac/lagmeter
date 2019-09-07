@@ -91,7 +91,7 @@ Note: You don't need to wire the LCD and buttons if you use the LCD Keypad shiel
 - Reed Relais SIL 7271-D 5V
 - Phototransistor BPX 38-3 OSO
 - R=22k
-- C=4.7uF/16V
+- C=22pF
 - USB Host Shield v2.0
 
 

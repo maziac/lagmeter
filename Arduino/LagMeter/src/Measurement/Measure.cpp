@@ -104,12 +104,12 @@ struct MinMax getMaxMinAnalogIn(int inputPin, int measTime) {
 
 // Waits until the input pin value stays in range for a given time.
 // @param inputPin Pin from which the analog input is read. Photo sensor or SVGA.
-// @param outpValue Use HIGH or LOW for the output pin.
-// @param range The range to compare the inputPin value to.
+// @param threshold The value to compare the inputPin value to.
+// @param positiveThreshold If true check that inputPin value is bigger, if false check that inputPin value is smaller.
 // @param waitTime The time to wait for.
-void waitMsInput(int inputPin, int outpValue, struct MinMax range, int waitTime) {
+void waitMsInput(int inputPin, int threshold, bool positiveThreshold, int waitTime) {
   // Simulate joystick button
-  digitalWrite(OUT_PIN_BUTTON, outpValue); 
+  digitalWrite(OUT_PIN_BUTTON, LOW); 
   // Wait
   int time;
   int startTime = millis();
@@ -117,10 +117,12 @@ void waitMsInput(int inputPin, int outpValue, struct MinMax range, int waitTime)
   do {
     // Get input value 
     int value = analogRead(inputPin);
-    // Check for normal range
-    if(value < range.min || value > range.max) {
+    // Check for threshold (not fulfilled)
+    if(!((positiveThreshold && value > threshold) // Check if value is bigger
+       || (!positiveThreshold && value < threshold))) // Check if value is smaller
+       {
       // Out of range, restart timer
-      startTime = millis();
+      startTime = millis(); 
     }
     // Get time
     int currTime = millis();
@@ -139,19 +141,16 @@ void waitMsInput(int inputPin, int outpValue, struct MinMax range, int waitTime)
     
 // Waits until the photo sensor (or SVGA value) value gets into range.
 // @param inputPin Pin from which the analog input is read. Photo sensor or SVGA.
-// @param range The range to compare the inputPin value to.
+// @param threshold The value to compare the inputPin value to.
+// @param positiveThreshold If true check that inputPin value is bigger, if false check that inputPin value is smaller.
 // @param inputPinWait (Optional) If given: wait for inputPinWait value to get in 'rangeWait' before starting the measurement.
-// @param rangeWait (optional) The range to compare the inputPinWait value to.
-int measureLag(int inputPin, struct MinMax range, int inputPinWait = -1, struct MinMax rangeWait = {}) {
+// @param thresholdWait (Optional) The value to compare the inputPinWait value to. (Always positive threshold)
+int measureLag(int inputPin, int threshold, bool positiveThreshold, int inputPinWait = -1, int thresholdWait = 0) {
   int key = 1023;
   unsigned int tcount1 = 0;
   bool accuracyOvrflw = false;
   bool counterOvrflw = false;
   bool keyPressed = false;
-
-  // Add another small safety margin if range is inverted
-  range.min--;
-  range.max++;
 
   // Turnoff interrupts.
   noInterrupts();
@@ -188,11 +187,12 @@ int p2 = -1;
   // Check if we wait for a 2nd trigger (required to measure the delay between SVGA out and monitor)
   if(inputPinWait >= 0) {
     // Wait on trigger
+    int counter = 1;
     while(true) {
       // Check range of wait-input-pin 
       int value = analogRead(inputPinWait);
-      // Check for range
-      if(value >= rangeWait.min && value <= rangeWait.max) {
+      // Check for thresholdWait
+      if(value > thresholdWait) {
         // Restart measurement
         TCNT2 = tcnt2Value;
         t1 = TCNT1;
@@ -201,6 +201,7 @@ int p2 = -1;
         break;  
       }
 
+      /*
       // Assure that measurement accuracy is good enough
       TCNT2 = tcnt2Value;
       if(TIFR2 & (1<<TOV2)) {
@@ -208,21 +209,27 @@ int p2 = -1;
         accuracyOvrflw = true;
         goto L_ERROR;
       }
+      */
 
-      // Check if key pressed
-      key = analogRead(0);
-      // Return immediately if something is pressed
-      if (key < 800) {
-        keyPressed = true;
-        goto L_ERROR;
-      } 
+      // Do this not in every loop
+      counter--;
+      if(counter == 0) {
+        counter = 1000;
+        // Check if key pressed
+        key = analogRead(0);
+        // Return immediately if something is pressed
+        if (key < 800) {
+          keyPressed = true;
+          goto L_ERROR;
+        } 
 
-      // Check for time out
-      if(TIFR1 & (1<<TOV1)) {
-        // Interrupt pending bit set -> Overflow happened.
-        // This means 4.19 seconds elapsed with no signal.
-        counterOvrflw = true;
-        goto L_ERROR;
+        // Check for time out
+        if(TIFR1 & (1<<TOV1)) {
+          // Interrupt pending bit set -> Overflow happened.
+          // This means 4.19 seconds elapsed with no signal.
+          counterOvrflw = true;
+          goto L_ERROR;
+        }
       }
     }
   }
@@ -232,14 +239,20 @@ int p2 = -1;
     digitalWrite(OUT_PIN_BUTTON_COMPARE_TIME, HIGH); 
 #endif 
 
+  TIFR2 = 1<<TOV2;  // Clear pending bits
   while(true) {
     // Check range of input pin
     int value = analogRead(inputPin);
-    // Check for inverted range
-    if(value < range.min || value > range.max) {
+    // Check for threshold
+    if((positiveThreshold && value > threshold) // Check if value is bigger
+       || (!positiveThreshold && value < threshold)) // Check if value is smaller
+       {
         tcount1 = TCNT1;
         t2 = TCNT1;
         p2 = value;
+        if(t2 < 30 || true) {
+     //       digitalWrite(3,HIGH);
+        }
         break;  
     }
 
@@ -301,24 +314,6 @@ L_ERROR:
   tcount1l *= 64*adjust;
   tcount1l = (tcount1l+500) / 1000; // with rounding
 
-
-if((int)tcount1l < 5) {
-  Serial.print("tcount1l=");
-  Serial.println(tcount1l);
-  Serial.print("t2=");
-  Serial.println(t2);
-  Serial.print("t1=");
-  Serial.println(t1);
-  Serial.print("p2=");
-  Serial.println(p2);
-  Serial.print("p1=");
-  Serial.println(p1);
-  Serial.print("rmin=");
-  Serial.println(range.min);
-  Serial.print("rmax=");
-  Serial.println(range.max);
-}
-
   return (int)tcount1l;
 }
 
@@ -329,8 +324,8 @@ if((int)tcount1l < 5) {
 // @param range The range for the photo sensor.
 // @param rangeWait The range for the SVGA value.
 // @return the time.
-int measureLagDiff(struct MinMax range, struct MinMax rangeWait) {
-  return measureLag(IN_PIN_PHOTO_SENSOR, range, IN_PIN_SVGA, rangeWait);
+int measureLagDiff(int threshold, int thresholdWait) {
+  return measureLag(IN_PIN_PHOTO_SENSOR, threshold, false, IN_PIN_SVGA, thresholdWait);
 }
 
 
@@ -381,6 +376,9 @@ void measurePhotoSensor() {
     return;
   }
   
+  // Calculate threshold in the middle (buttonOffLight value is bigger than buttonOnLight value)
+  int threshold = (buttonOnLight.max + buttonOffLight.min)/2;
+
   // Print
   lcd.clear();
   lcd.print(F("Start testing..."));
@@ -401,7 +399,7 @@ void measurePhotoSensor() {
     lcd.print(F(": "));
     
     // Wait until input (photo sensor) changes
-    int time = measureLag(IN_PIN_PHOTO_SENSOR, buttonOffLight);
+    int time = measureLag(IN_PIN_PHOTO_SENSOR, threshold, false);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
@@ -410,7 +408,7 @@ void measurePhotoSensor() {
     // Wait a random time to make sure we really get different results.
     int waitRnd = random(70, 150);
     // Wait until input (photo sensor) changes
-    waitMsInput(IN_PIN_PHOTO_SENSOR, LOW, buttonOffLight, waitRnd);
+    waitMsInput(IN_PIN_PHOTO_SENSOR, threshold, true, waitRnd);
     if(isAbort()) return;
 
     // Calculate max/min.
@@ -492,10 +490,8 @@ void measureSVGA() {
     return;
   }
   
-  // Calculate measure ranges 
-  buttonOnSVGA.min = (buttonOnSVGA.max+buttonOffSVGA.max)/2;
-  buttonOnSVGA.max = 1023;
-  buttonOffSVGA.min = 0;
+  // Calculate threshold in the middle 
+  int threshold = (buttonOnSVGA.max+buttonOffSVGA.max)/2;
   
   // Print
   lcd.clear();
@@ -517,7 +513,7 @@ void measureSVGA() {
     lcd.print(F(": "));
     
     // Wait until input (svga) changes
-    int time = measureLag(IN_PIN_SVGA, buttonOffSVGA);
+    int time = measureLag(IN_PIN_SVGA, threshold, true);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
@@ -526,7 +522,7 @@ void measureSVGA() {
     // Wait a random time to make sure we really get different results.
     int waitRnd = random(70, 150);
     // Wait until input (svga) changes
-    waitMsInput(IN_PIN_SVGA, LOW, buttonOffSVGA, waitRnd);
+    waitMsInput(IN_PIN_SVGA, threshold, false, waitRnd);
     if(isAbort()) return;
 
     // Calculate max/min.
@@ -650,10 +646,11 @@ void measureSvgaToMonitor() {
     return;
   }
   
-  // Calculate measure ranges 
-  buttonOnSVGA.min = (buttonOnSVGA.max+buttonOffSVGA.max)/2;
-  buttonOnSVGA.max = 1023;
-  buttonOffSVGA.min = 0;
+  // Calculate threshold in the middle (buttonOffLight value is bigger than buttonOnLight value)
+  int threshold = (buttonOnLight.max + buttonOffLight.min)/2;
+
+  // Calculate threshold in the middle 
+  int thresholdWait = (buttonOnSVGA.max+buttonOffSVGA.max)/2;
   
   // Print
   lcd.clear();
@@ -675,7 +672,7 @@ void measureSvgaToMonitor() {
     lcd.print(F(": "));
     
     // Wait until input (photo sensor) changes
-    int time = measureLagDiff(buttonOffLight, buttonOnSVGA);
+    int time = measureLagDiff(threshold, thresholdWait);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
@@ -684,7 +681,7 @@ void measureSvgaToMonitor() {
      // Wait a random time to make sure we really get different results.
     int waitRnd = random(70, 150);
     // Wait until input (photo sensor) changes
-    waitMsInput(IN_PIN_PHOTO_SENSOR, LOW, buttonOffLight, waitRnd);
+    waitMsInput(IN_PIN_PHOTO_SENSOR, threshold, true, waitRnd);
     if(isAbort()) return;
 
     // Calculate max/min.

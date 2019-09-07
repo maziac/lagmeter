@@ -28,7 +28,7 @@ However it was tested only with a 16MHz CPU.
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "0.6"
+#define SW_VERSION "0.7"
 
 
 

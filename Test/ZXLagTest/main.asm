@@ -114,7 +114,8 @@ set_backg_paper_color:
     rlca 
     ;call set_backg
     ; Set only small part
-    ld bc,2*32  ; 2 lines
+    ;ld bc,2*32  ; 2 lines
+    ld bc,COLOR_SCREEN_SIZE
     ld hl,COLOR_SCREEN
     call fill_memory
     ret	

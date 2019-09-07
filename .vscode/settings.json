@@ -16,6 +16,10 @@
         "ratio": "cpp",
         "tuple": "cpp",
         "type_traits": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "__node_handle": "cpp",
+        "optional": "cpp",
+        "locale": "cpp",
+        "system_error": "cpp"
     }
 }
