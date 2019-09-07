@@ -166,10 +166,9 @@ void printUsbLag(float measuredTime) {
       return;
     // Init if first measurement 
     if(total <= 1) {
-      lcd.setCursor(0,1);
-      lcd.print(F("Lag: "));
       usblagMin = 1000000.0;
       usblagMax = 0.0;
+      usblagAvg = 0.0;
     }
     // Print cycle
     lcd.setCursor(0,0);
@@ -188,7 +187,7 @@ void printUsbLag(float measuredTime) {
       usblagMin = measuredTime;
 
     // Print min/max result
-    lcd.setCursor(5,1);
+    lcd.setCursor(0,1);
     if(usblagMin != usblagMax) {
       lcd.print(usblagMin);
       lcd.print(F("-"));
