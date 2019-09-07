@@ -161,8 +161,19 @@ extern int total;
 float usblagMin;
 float usblagMax;
 float usblagAvg;
+bool usbEventToggle = false;
 void printUsbLag(float measuredTime) {
-    if(total > USBLAG_CYCLES)
+    if(total < 0) {
+      // Print something in 2nd line. Can be used as a test if game controller reacts.
+      lcd.setCursor(0,1);
+      usbEventToggle = !usbEventToggle;
+      if(usbEventToggle)
+        lcd.print(F("****    ****    "));
+      else
+        lcd.print(F("    ****    ****"));
+      return;
+    }
+    if(total > USBLAG_CYCLES )
       return;
     // Init if first measurement 
     if(total <= 1) {
@@ -193,7 +204,7 @@ void printUsbLag(float measuredTime) {
       lcd.print(F("-"));
     }
     lcd.print(usblagMax);
-    lcd.print(F("ms     "));
+    lcd.print(F("ms           "));
 
     // Calculate average
     usblagAvg += measuredTime;
@@ -208,6 +219,8 @@ void printUsbLag(float measuredTime) {
       lcd.print(F("ms         "));
       // Make sure button is off
       digitalWrite(BUTTON_PIN, false);
+      // End measurement
+      total++;
     }
 }
 
@@ -302,6 +315,7 @@ class TimingManager {
         Serial.print("Cant poll device ");
         Serial.print(res);
         Serial.print("\n");
+        Error(F("USB Device:"), F("Can't poll!"));
       }
       if (res == hrNAK) { return 0; }
       return doMeasure(VID, PID, pollingEP->maxPktSize, pollBuffer);
@@ -479,7 +493,7 @@ void handleUsblag() {
   if(abortAll) {
     digitalWrite(BUTTON_PIN, false);
     abortAll = false;
-    total = USBLAG_CYCLES+1;  // end
+    total = -1; // Show game controller action
     printUsblagMenu();
   }
 
@@ -487,7 +501,7 @@ void handleUsblag() {
   int key = getLcdKey();
   if(key != LCD_KEY_NONE) {
     // Check if we should abort the current measurement
-    if(total > 0 && total <= USBLAG_CYCLES) {
+    if(total > 0) {
       abortAll = true;
       return;
     }
@@ -516,7 +530,7 @@ void handleUsblag() {
   
   // Handle time
   unsigned long current_time = micros();
-  if (current_time >= nextchange && total < USBLAG_CYCLES) {
+  if (current_time >= nextchange && total >= 0 && total < USBLAG_CYCLES) {
     if (time != 0) {
       Error(F("USB device:"), F("Input dropped!"));
       Serial.println("Input was dropped!");
@@ -547,6 +561,7 @@ void loop() {
         break;
       case USBLAG_MODE:
         printUsblagMenu();
+        total = -1; // Show game controller action
         break;  
     }
   }
