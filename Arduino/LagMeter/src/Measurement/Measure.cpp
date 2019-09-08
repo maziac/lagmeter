@@ -60,7 +60,7 @@ void testPhotoSensor() {
       lcd.print(F("OFF"));
       
     // Wait for potential lag time
-    waitMs(150); if(isAbort()) return;
+    waitMs(150); if(isAbort()) break;
     
     // Evaluate for some time
     for(int i=0; i<3; i++) {
@@ -69,7 +69,7 @@ void testPhotoSensor() {
       lcd.setCursor(8, 1);
       lcd.print(value);
       lcd.print(F("   "));
-      waitMs(500); if(isAbort()) return;
+      waitMs(500); if(isAbort()) break;
     }
   }
 }

@@ -110,12 +110,13 @@ void loop() {
 
 // Define used Keys.
 // Lagmeter:
-const int KEY_TEST_PHOTO_BUTTON = LCD_KEY_LEFT;
+const int KEY_TEST_PHOTO_BUTTON = LCD_KEY_SELECT;
 const int KEY_MEASURE_PHOTO = LCD_KEY_DOWN;
 const int KEY_MEASURE_SVGA = LCD_KEY_UP;
 const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_RIGHT;
 // usblag:
 const int KEY_USBLAG_MEASURE = LCD_KEY_DOWN;
+const int KEY_USBLAG_TEST_BUTTON = LCD_KEY_SELECT;
 
 
 // Main lag testing mode.
@@ -168,13 +169,15 @@ void printUsbLag(float measuredTime) {
       lcd.setCursor(0,1);
       usbEventToggle = !usbEventToggle;
       if(usbEventToggle)
-        lcd.print(F("****    ****    "));
+        lcd.print(F("####----####----"));
       else
-        lcd.print(F("    ****    ****"));
+        lcd.print(F("----####----####"));
       return;
     }
     if(total > USBLAG_CYCLES )
       return;
+
+  //delay(2);
     // Init if first measurement 
     if(total <= 1) {
       usblagMin = 1000000.0;
@@ -487,6 +490,41 @@ void handleLagMeter() {
 }
 
 
+// ON/OFF of the button and showing the result.
+// I.e. a quick test to see if the connection is OK.
+void usblagTestButton() {
+  // Use USB polling interval of 1ms.
+  //Hid.overrideInterval = 1;
+  //xbox.overrideInterval = 1;
+  lcd.clear();
+  lcd.print(F("Button:"));
+  int outpValue = LOW;
+  total = -1;
+  while(!abortAll) {
+    // Stimulate button
+    outpValue = ~outpValue;
+    digitalWrite(BUTTON_PIN, outpValue);
+
+    // Print button state
+    lcd.setCursor(8, 0);
+    if(outpValue)
+      lcd.print(F("ON "));
+    else
+      lcd.print(F("OFF"));
+      
+    // Wait for some time
+    for(int i=0; i<1500; i++) {
+      delay(1); // wait 1ms
+      Usb.Task();
+      if(isAbort()) break;
+    }
+
+  }
+  // Button off
+  digitalWrite(BUTTON_PIN, button);
+}
+
+
 // Checks for keypresses for usblag mode.
 void handleUsblag() {
   // Check to print the menu
@@ -507,6 +545,11 @@ void handleUsblag() {
     }
   }
   switch(key) {
+    case KEY_USBLAG_TEST_BUTTON:
+      // ON/OFF of the button and showing the result. I.e. a quick test to see if the connection is OK.
+      usblagTestButton();
+      return;
+      break;
     case KEY_USBLAG_MEASURE:
       // Start testing usb device measurement
       button = false;
@@ -518,7 +561,7 @@ void handleUsblag() {
       // Use USB polling interval of 1ms.
       Hid.overrideInterval = 1;
       xbox.overrideInterval = 1;
-      // Infrom user
+      // Inform user
       lcd.clear();
       lcd.println(F("Start testing..."));
       // Wait for potential lag time
