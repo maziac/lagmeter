@@ -107,6 +107,9 @@ void loop() {
 // The SW version.
 #define SW_VERSION "0.8"
 
+// Enable this to get some additional output over serial port (especially for usblag).
+#define SERIAL_IF_ENABLED
+
 
 // Define used Keys.
 // Lagmeter:
@@ -440,8 +443,10 @@ BTController btHid(&Btd);
 void setup() {
 
   // Debug communication
+#ifdef SERIAL_IF_ENABLED
   Serial.begin(115200);
   Serial.println(F("Serial connection up!"));
+#endif
 
   // Random seed
   randomSeed(1234);
