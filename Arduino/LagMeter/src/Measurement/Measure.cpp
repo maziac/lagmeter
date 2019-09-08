@@ -23,6 +23,13 @@ const int COUNT_CYCLES = 100;
 ///////////////////////////////////////////////////////////////////
 
 
+// The minimum diff required between min/max ov the SVGA signal.
+#define SVGA_MIN_DIFF  20
+
+// The checked accuracy in ms:
+#define CHECK_ACCURACY  2
+
+
 // Initializes the pins.
 void setupMeasurement() {
   // Setup GPIOs
@@ -155,12 +162,15 @@ int measureLag(int inputPin, int threshold, bool positiveThreshold, int inputPin
   // Turnoff interrupts.
   noInterrupts();
 
+  const int adjust = 16000000/F_CPU;  // 1 for 16MHz, 2 for 8MHz.
+  //const int tcnt2Value = 256-(0.5/0.004/adjust); //  131;  // (256-131)*4us = 0.5ms, would work up to (256-220)*4us = 0.144ms
+  const int tcnt2Value = 256-(CHECK_ACCURACY/0.064/adjust); // 2ms
+
   // Setup timer 1 (16 bit timer) to measure the time:
   // Prescaler: 1024 -> resolution 64us (at F_CPU=16MHz).
   // No timer compare register.
   TCCR1A = 0; // No PWM
   TCCR1B = (1 << CS10) | (1 << CS12);  // Prescaler = 1024
-  TIFR1 = 1<<TOV1;  // Clear pending bits
   TIMSK1 = 1<<TOIE1;  // For polling only
 
   // Setup timer 2 (8 bit timer) to check measurement accuracy:
@@ -168,21 +178,16 @@ int measureLag(int inputPin, int threshold, bool positiveThreshold, int inputPin
   // No timer compare register.
   TCCR2A = 0; // No PWM
   TCCR2B = (1 << CS10) | (1 << CS12);  // Prescaler = 1024
-  TIFR2 = 1<<TOV2;  // Clear pending bits
   TIMSK2 = 1<<TOIE2;  // For polling only
 
   // Reset timer
-  const int adjust = 16000000/F_CPU;  // 1 for 16MHz, 2 for 8MHz.
-  const int tcnt2Value = 256-(0.5/0.004/adjust); //  131;  // (256-131)*4us = 0.5ms, would work up to (256-220)*4us = 0.144ms
   TCNT2 = tcnt2Value;
   TCNT1 = 0;
+  TIFR1 = 1<<TOV1;  // Clear pending bits
+  TIFR2 = 1<<TOV2;  // Clear pending bits
+
   // Simulate joystick button
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
-
-int t1 = -1;
-int t2 = -1;
-int p1 = -1;
-int p2 = -1;
 
   // Check if we wait for a 2nd trigger (required to measure the delay between SVGA out and monitor)
   if(inputPinWait >= 0) {
@@ -195,8 +200,6 @@ int p2 = -1;
       if(value > thresholdWait) {
         // Restart measurement
         TCNT2 = tcnt2Value;
-        t1 = TCNT1;
-        p1 = analogRead(inputPin);
         TCNT1 = 0;
         break;  
       }
@@ -246,14 +249,9 @@ int p2 = -1;
     // Check for threshold
     if((positiveThreshold && value > threshold) // Check if value is bigger
        || (!positiveThreshold && value < threshold)) // Check if value is smaller
-       {
-        tcount1 = TCNT1;
-        t2 = TCNT1;
-        p2 = value;
-        if(t2 < 30 || true) {
-     //       digitalWrite(3,HIGH);
-        }
-        break;  
+    {
+      tcount1 = TCNT1;
+      break;  
     }
 
     // Assure that measurement accuracy is good enough
@@ -299,7 +297,7 @@ L_ERROR:
     waitLcdKeyRelease();
     abortAll = true;
   }
-  else if(accuracyOvrflw) {    // Assure that measuremnt accuracy is good enough
+  else if(accuracyOvrflw) {    // Assure that measurement accuracy is good enough
     // Error
     Error(F("Error:"), F("Accuracy >= 1ms"));
   }
@@ -484,7 +482,7 @@ void measureSVGA() {
   waitMs(1000); if(isAbort()) return;
 
   // Check values. They should differ clearly. (Should be around 100.)
-  if(buttonOnSVGA.max-buttonOffSVGA.max < 20) {
+  if(buttonOnSVGA.max-buttonOffSVGA.max < SVGA_MIN_DIFF) {
     // Error
     Error(F("Calibr. Error:"), F("Signal too weak"));
     return;
@@ -557,7 +555,7 @@ void measureSVGA() {
 
 
 
-// Calibrates photo sensor and SVGA output and measure the
+// Calibrates photo sensor and SVGA output and measures the
 // latency between SVGA out and photo sensor signal on monitor.
 // Uses the blue-output of SVGA (but you could also use red or green).
 // Calibration: 
@@ -569,7 +567,7 @@ void measureSVGA() {
 //   sensor value.
 // Measurement:
 //   Simulate joystick button press -> measure time when svga value changes
-//   to time when phot sensor changes.
+//   to time when photo sensor changes.
 void measureSvgaToMonitor() {
   // Calibrate
   lcd.clear();
@@ -601,14 +599,13 @@ void measureSvgaToMonitor() {
   lcd.print(buttonOnSVGA.max-buttonOffSVGA.max);
   lcd.print(F("         "));
   waitMs(1000); if(isAbort()) return;
-  
-  // Check values. They should differ clearly. (Should be around 100.)
-  if(buttonOnSVGA.max-buttonOffSVGA.max < 20) {
+
+ // Check values. They should differ clearly. (Should be around 100.)
+  if(buttonOnSVGA.max-buttonOffSVGA.max < SVGA_MIN_DIFF) {
     // Error
     Error(F("Calibr. Error:"), F("Signal too weak"));
     return;
   }
-
 
   // Calibrate
   lcd.clear();
@@ -714,3 +711,282 @@ void measureSvgaToMonitor() {
   while(getLcdKey() != LCD_KEY_NONE);
 }
 
+
+
+
+   
+// Waits until the photo sensor (or SVGA value) value gets into range.
+// @param inputPin Pin from which the analog input is read. Photo sensor or SVGA.
+// @param pressTime The time he button press is simulated.
+// @param threshold The value to compare the inputPin value to.
+// @param positiveThreshold If true check that inputPin value is bigger, if false check that inputPin value is smaller.
+// @param maxMeasureTime In ms. The function is left after this time (if no signal is found). 
+// @return true if button press reaction was found, false if no reaction was found.
+bool checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool positiveThreshold, int maxMeasureTime) {
+  int key = 1023;
+  unsigned int tcount1 = 0;
+  bool accuracyOvrflw = false;
+  bool counterOvrflw = false;
+  bool keyPressed = false;
+
+  // Turnoff interrupts.
+  noInterrupts();
+
+  const int adjust = 16000000/F_CPU;  // 1 for 16MHz, 2 for 8MHz.
+  const int tcnt2Value = 256-(CHECK_ACCURACY/0.064/adjust); // 2ms
+  const int tcnt1ValueOff = -(int)(((float)pressTime)/0.064/adjust);  
+  const int tcnt1ValueTooLong = -(int)(((float)maxMeasureTime)/0.064/adjust);
+  bool switchOff = true;
+
+/*
+  Serial.print(F("tcnt1ValueOff="));
+  Serial.println(tcnt1ValueOff);
+  Serial.print(F("tcnt1ValueTooLong="));
+  Serial.println(tcnt1ValueTooLong);
+*/
+
+  // 16Mhz, prescaler = 1024
+  // 1024/16000000 = 0.000064s = 64us
+  // 65536*0.000064s = 4.2s max
+
+  // Setup timer 1 (16 bit timer) to measure the time:
+  // Prescaler: 1024 -> resolution 64us (at F_CPU=16MHz).
+  // No timer compare register.
+  TCCR1A = 0; // No PWM
+  TCCR1B = (1 << CS10) | (1 << CS12);  // Prescaler = 1024
+  TIMSK1 = 1<<TOIE1;  // For polling only
+
+  // Setup timer 2 (8 bit timer) to check measurement accuracy:
+  // Prescaler: 1024 -> resolution 64us (at F_CPU=16MHz).
+  // No timer compare register.
+  TCCR2A = 0; // No PWM
+  TCCR2B = (1 << CS10) | (1 << CS12);  // Prescaler = 1024
+  TIFR2 = 1<<TOV2;  // Clear pending bits
+  TIMSK2 = 1<<TOIE2;  // For polling only
+
+  // Reset timer
+  TCNT2 = tcnt2Value;
+  TCNT1 = tcnt1ValueOff;
+  TIFR1 = 1<<TOV1;  // Clear pending bits
+  TIFR2 = 1<<TOV2;  // Clear pending bits
+  // Simulate joystick button
+  digitalWrite(OUT_PIN_BUTTON, HIGH); 
+
+  while(true) {
+    // Check range of input pin
+    int value = analogRead(inputPin);
+    // Check for threshold
+    if((positiveThreshold && value > threshold) // Check if value is bigger
+       || (!positiveThreshold && value < threshold)) // Check if value is smaller
+    {
+      tcount1 = TCNT1;
+      break;  
+    }
+
+    // Assure that measurement accuracy is good enough
+    TCNT2 = tcnt2Value;
+    if(TIFR2 & (1<<TOV2)) {
+      // Error
+      accuracyOvrflw = true;
+      break;
+    }
+
+    // Check if key pressed
+    key = analogRead(0);
+    // Return immediately if something is pressed
+    if (key < 800) {
+      keyPressed = true;
+      break;
+    }
+
+    // Check for time out
+    if(TIFR1 & (1<<TOV1)) {
+      // Interrupt pending bit set -> Overflow happened.
+      // Check mode:
+      if(switchOff) {
+        // Switch button off
+        digitalWrite(OUT_PIN_BUTTON, LOW); 
+        switchOff = false;
+        TCNT1 = tcnt1ValueTooLong;
+        TIFR1 = 1<<TOV1;  // Clear pending bits
+      }
+      else {
+        // This means maxMeasureTime elapsed with no signal.
+        counterOvrflw = true;
+        break;
+      }
+    }
+  }
+
+  // Disable timer interrupts
+  TIMSK1 = 0;
+  TIMSK2 = 0;
+
+  // Enable interrupts
+  interrupts();
+
+  // Key pressed ? -> Abort
+  if(keyPressed) {
+    waitLcdKeyRelease();
+    abortAll = true;
+  }
+  else if(accuracyOvrflw) {    // Assure that measurement accuracy is good enough
+    // Error
+    Error(F("Error:"), F("Accuracy >= 1ms"));
+  }
+  
+  /*
+  else if(counterOvrflw) {    // Assure that measurement accuracy is good enough
+    // Error
+    Error(F("Error:"), F("counterOvrflw"));
+  }
+*/
+
+  return !counterOvrflw;
+}
+
+
+// Calibrates photo sensor and SVGA output and measures the
+// minimal time that the button needs to be pressed to be recognized
+// by the system (i.e. the emulator).
+// Since the normal polling time of an emulator should be 20ms (or 17ms for US) this should be the result.
+// This method verifies this assumption.
+// 
+// Pseudo code:
+// 1. Start with button-press (relais close) time of 1ms
+// 2. Do 100x test 
+// 3. If one of the tests fail then increase close-time by 1ms and start at 2
+// 4. If all 100 tests pass the minimum time has been found.
+//
+// A test lasts until either an SVGA signal or the photo sensor signal is
+// found. For convenience the user needs to conenct only one of both.
+// If no signal is found for 300ms the test has failed.
+void measureMinPressTime() {
+  // Calibrate
+  lcd.clear();
+  lcd.print(F("Calibrate SVGA"));
+  // Simulate joystick button press
+  digitalWrite(OUT_PIN_BUTTON, HIGH); 
+  waitMs(500); if(isAbort()) return;
+  // Get max svga value
+  struct MinMax buttonOnSVGA = getMaxMinAnalogIn(IN_PIN_SVGA, 1500);
+  if(isAbort()) return;
+  // Print
+  lcd.setCursor(0,1);
+  lcd.print(buttonOnSVGA.max);
+  // Simulate joystick button unpress
+  digitalWrite(OUT_PIN_BUTTON, LOW); 
+  waitMs(500); if(isAbort()) return;
+  // Get max/min light value
+  struct MinMax buttonOffSVGA = getMaxMinAnalogIn(IN_PIN_SVGA, 1500);
+  if(isAbort()) return;
+  // Print
+  lcd.setCursor(0,1);
+  lcd.print(buttonOffSVGA.max);
+  lcd.print(F("         "));
+  waitMs(1000); if(isAbort()) return;
+
+  // Print diff
+  lcd.setCursor(0,1);
+  lcd.print(F("Diff="));
+  lcd.print(buttonOnSVGA.max-buttonOffSVGA.max);
+  lcd.print(F("         "));
+  waitMs(1000); if(isAbort()) return;
+  
+  // Check if SVGA signal can be used
+  bool useSVGA = (buttonOnSVGA.max-buttonOffSVGA.max >= SVGA_MIN_DIFF);
+  int threshold;
+  int pin;
+
+  if(useSVGA) {
+    // Use SVGA threshold
+    threshold = (buttonOnSVGA.max+buttonOffSVGA.max)/2;
+    pin = IN_PIN_SVGA;
+  }
+  else {
+    // Calibrate photo sensor 
+    lcd.clear();
+    lcd.print(F("Calib. Photo S."));
+    // Simulate joystick button press
+    digitalWrite(OUT_PIN_BUTTON, HIGH); 
+    waitMs(500); if(isAbort()) return;
+    // Get max/min light value
+    struct MinMax buttonOnLight = getMaxMinAnalogIn(IN_PIN_PHOTO_SENSOR, 1500);
+    if(isAbort()) return;
+    // Print
+    lcd.setCursor(0,1);
+    lcd.print(buttonOnLight.min);
+    lcd.print(F("-"));
+    lcd.print(buttonOnLight.max);
+    // Simulate joystick button unpress
+    digitalWrite(OUT_PIN_BUTTON, LOW); 
+    waitMs(500); if(isAbort()) return;
+    // Get max/min light value
+    struct MinMax buttonOffLight = getMaxMinAnalogIn(IN_PIN_PHOTO_SENSOR, 1500);
+    if(isAbort()) return;
+    // Print
+    lcd.setCursor(0,1);
+    lcd.print(buttonOffLight.min);
+    lcd.print(F("-"));
+    lcd.print(buttonOffLight.max);
+    lcd.print(F("         "));
+    waitMs(1000); if(isAbort()) return;
+
+    // Check values. They should not overlap.
+    bool overlap = (buttonOnLight.max >= buttonOffLight.min && buttonOnLight.min <= buttonOffLight.max);
+    if(overlap) {
+      // Error
+      Error(F("Calibr. Error:"), F("Ranges overlap"));
+      return;
+    }
+
+    // Calculate threshold in the middle (buttonOffLight value is bigger than buttonOnLight value)
+    threshold = (buttonOnLight.max + buttonOffLight.min)/2;
+    pin = IN_PIN_PHOTO_SENSOR;
+  }
+
+  // Print
+  lcd.clear();
+  lcd.print(F("Start testing..."));
+  waitMs(1000); if(isAbort()) return;
+  lcd.clear();
+  lcd.setCursor(0,1);
+  lcd.print(F("Time: "));
+
+  // Measure: Start with 1ms
+  int pressTime = 1;
+  while(true) {
+    // Print
+    lcd.setCursor(0,0);
+    lcd.print(pressTime);
+    lcd.print(F("ms: "));    
+  
+    int cycle = 0;
+    while(true) {
+      cycle ++;
+      // Print
+      lcd.setCursor(0,7);
+      lcd.print(cycle);
+      lcd.print(F("    "));
+      
+      // Wait until input changes
+      bool success = checkReactionWithPressTime(pin, 1, threshold, useSVGA, 300);
+      if(isAbort()) return;
+      if(!success) break;
+
+      // Wait a random time to make sure we really get different results.
+      int waitRnd = random(30, 80);
+      // Wait until input (photo sensor) changes
+      waitMsInput(IN_PIN_SVGA, threshold, false, waitRnd);
+      if(isAbort()) return;
+    }
+
+    // Increase pressTime
+    pressTime += 1; // by 1ms
+  }
+}
+
+
+
+
+ 

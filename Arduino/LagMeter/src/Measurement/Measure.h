@@ -13,5 +13,6 @@ void testPhotoSensor();
 void measurePhotoSensor();
 void measureSVGA();
 void measureSvgaToMonitor();
+void measureMinPressTime();
 
 #endif

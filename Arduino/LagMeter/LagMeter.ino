@@ -3,7 +3,8 @@ Lag-Meter:
 A device to measure the total lag (from USB controller to monitor output).
 It also includes sources from 
 https://gitlab.com/loic.petit/usblag
-by Loïc Petit (MIT License) which itself contains code from USB Host Shield Library 2.0 (GPL2 License).
+by Loïc Petit (MIT License) 
+which itself contains code from USB Host Shield Library 2.0 (GPL2 License).
 
 
 Licence
@@ -48,6 +49,7 @@ const int KEY_TEST_PHOTO_BUTTON = LCD_KEY_SELECT;
 const int KEY_MEASURE_PHOTO = LCD_KEY_DOWN;
 const int KEY_MEASURE_SVGA = LCD_KEY_UP;
 const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_RIGHT;
+const int KEY_MEASURE_MIN_TIME = LCD_KEY_LEFT;
 // usblag:
 const int KEY_USBLAG_MEASURE = LCD_KEY_DOWN;
 const int KEY_USBLAG_TEST_BUTTON = LCD_KEY_SELECT;
@@ -418,6 +420,9 @@ void handleLagMeter() {
       break;
     case KEY_MEASURE_SVGA_TO_PHOTO:
       measureSvgaToMonitor();
+      break;     
+    case KEY_MEASURE_MIN_TIME:
+      measureMinPressTime();
       break;   
   }
 }
