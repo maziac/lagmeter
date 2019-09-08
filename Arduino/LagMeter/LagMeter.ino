@@ -180,7 +180,6 @@ void printUsbLag(float measuredTime) {
     if(total > USBLAG_CYCLES )
       return;
 
-  //delay(2);
     // Init if first measurement 
     if(total <= 1) {
       usblagMin = 1000000.0;
@@ -452,7 +451,7 @@ void setup() {
   randomSeed(1234);
 
   // Lagmeter initialization
-  pinMode(BUTTON_PIN, OUTPUT);
+  //pinMode(BUTTON_PIN, OUTPUT); Already setup by setupMeasurement.
   // Setup pins 
   setupMeasurement();
   // Setup LCD
