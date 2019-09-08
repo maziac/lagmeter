@@ -1,6 +1,14 @@
 /*
 Lag-Meter:
 A device to measure the total lag (from USB controller to monitor output).
+It also includes sources from 
+https://gitlab.com/loic.petit/usblag
+by Loïc Petit (MIT License) which itself contains code from USB Host Shield Library 2.0 (GPL2 License).
+
+
+Licence
+The drivers code are mainly built on extracted code from the USB Host Shield Library 2.0, licenced using GPL2.
+The rest of the code is under the MIT Licence.
 
 
 Other timings:

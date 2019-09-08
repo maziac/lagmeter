@@ -273,7 +273,8 @@ See [spreadsheet](Docs/LagMeasurements.ods).
 # References
 
 - ["Controller Input Lag — How to measure it?" by Loïc *WydD* Petit](https://medium.com/@WydD/controller-input-lag-how-to-measure-it-1ebfd2c9d60)
-- ["Turn your ProMicro into a USB Keyboard/Mouse" by by jimblom](https://www.sparkfun.com/tutorials/337)
+- [usblag by Loïc Petit](https://gitlab.com/loic.petit/usblag)
+- ["Turn your ProMicro into a USB Keyboard/Mouse" by jimblom](https://www.sparkfun.com/tutorials/337)
 - ["Zero Delay USB encoders lag measurements - THEY HAVE LAG - AVOID" by oomek](http://forum.arcadecontrols.com/index.php?topic=153825.0)
 Video comparing zero delay vs. Arduino encoder. zero delay is lagging.
 - ["On the Latency of USB-Connected Input Devices" - by Raphael Wimmer, Andreas Schmid and Florian Bockes (Uni Regensburg)](https://epub.uni-regensburg.de/40182/1/)On_the_Latency_of_USB-Connected_Input_Devices_author_version.pdf
@@ -283,4 +284,10 @@ Video comparing zero delay vs. Arduino encoder. zero delay is lagging.
 
 
 
+# License
 
+The SW includes sources from [usblag](https://gitlab.com/loic.petit/usblag) by Loïc Petit which are under MIT License.
+
+These sources contain code from the [USB Host Shield Library 2.0](https://github.com/felis/USB_Host_Shield_2.0) which are under GPL2 license.
+
+The rest of the sources are under MIT Licence.
