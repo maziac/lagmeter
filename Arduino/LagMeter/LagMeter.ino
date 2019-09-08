@@ -302,11 +302,13 @@ class XBoxController : public XInputDriver, public TimingManager {
         Serial.print("XBOX Controller initialized\n");
       }
       report_mask.do_mask = false;
+      usblagMode = true;
       return 0;
     }
     uint8_t Release() {
       XInputDriver::Release();
       TimingManager::doPoll = false;
+      //usblagMode = false;
       return 0;
     }
     uint8_t Poll() { return pollDevice(VID, PID); }
