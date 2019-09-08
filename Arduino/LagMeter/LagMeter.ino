@@ -24,88 +24,11 @@ so that the correct time should be displayed.
 However it was tested only with a 16MHz CPU.
 */
 
-
-#if 0
-
 #include "src/Measurement/Utilities.h"
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "0.7"
-
-
-
-// Define used Keys.
-const int KEY_TEST_PHOTO_BUTTON = LCD_KEY_LEFT;
-const int KEY_MEASURE_PHOTO = LCD_KEY_DOWN;
-const int KEY_MEASURE_SVGA = LCD_KEY_UP;
-const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_RIGHT;
-
-
-
-// Prints the main menu.
-void printLagMeterMenu() {
-  // Print "Welcome"
-  lcd.clear();
-  lcd.print(F("** Lag-Meter  **"));
-  lcd.setCursor(0, 1);
-  lcd.print(F("v" SW_VERSION "," __DATE__));
-}
-
-
-
-// The setup routine.
-void setup() {
-  // Setup pins 
-  setupMeasurement();
-
-  // Random seed
-  randomSeed(1234);
-
-
-  // Setup LCD
-  lcd.begin(16, 2);
-  lcd.clear();
-  
-  // Debug communication
-  Serial.begin(115200);
-  Serial.println(F("Serial connection up!"));
-}
-
-
-// Main loop.
-void loop() {  
-  if(abortAll) {
-    printLagMeterMenu();
-    abortAll = false;
-  }
-  
-  int key = getLcdKey();
-  
-  switch(key) {
-    case KEY_TEST_PHOTO_BUTTON:
-	    testPhotoSensor();
-      break;
-    case KEY_MEASURE_PHOTO:
-      measurePhotoSensor();
-      break;
-    case KEY_MEASURE_SVGA:
-      measureSVGA();
-      break;
-    case KEY_MEASURE_SVGA_TO_PHOTO:
-      measureSvgaToMonitor();
-      break;   
-  }
-}
-
-
-#else 
-
-#include "src/Measurement/Utilities.h"
-#include "src/Measurement/Measure.h"
-
-// The SW version.
-#define SW_VERSION "0.8"
+#define SW_VERSION "0.9"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
@@ -593,12 +516,7 @@ void handleUsblag() {
 
 
 // MAIN LOOP
-int looptime = 0;
 void loop() {
-
-#if 01
-
-#if 01
   // Check if main mode changed.
   if(mainMode != prevMainMode) {
     prevMainMode = mainMode;
@@ -621,98 +539,7 @@ void loop() {
         handleUsblag();
         break;  
   }
-  
- // Usb.Task();
- #endif 
- 
-//#else
 
-#if 01
   Usb.Task();
-#else
-  unsigned long current_time = micros();
-  if (current_time >= nextchange && total < 1000) {
-    if (time != 0) {
-      Serial.println("Input was dropped!");
-    }
-    button = !button;
-    digitalWrite(BUTTON_PIN, button);
-    time = micros();
-    total++;
-    nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
-  }
-  
-  if (Serial.available()) {
-    byte inByte = Serial.read();
-    uint8_t reading_interval;
-    switch (inByte) {
-      case '1':
-        button = true;
-        digitalWrite(BUTTON_PIN, button);
-        time = micros();
-        Serial.println("High");
-        break;
-      case '0':
-        button = false;
-        digitalWrite(BUTTON_PIN, button);
-        time = micros();
-        Serial.println("Low");
-        break;
-      case 'b':
-        Hid.overrideInterval = 255;
-        xbox.overrideInterval = 255;
-        Serial.println("Switch to burn mode: disabling polling interval");
-        break;
-      case 'o':
-        Hid.overrideInterval = 1;
-        xbox.overrideInterval = 1;
-        Serial.println("Override polling interval to 1ms!");
-        break;
-      case 'l':
-        Serial.print("Last loop timing... ");
-        Serial.print(looptime);
-        Serial.println("µs");
-        break;
-      case 'n':
-        Hid.overrideInterval = 0;
-        xbox.overrideInterval = 0;
-        Serial.println("Back to normal polling interval!");
-        break;
-      case 'p':
-        reading_interval = intervalPow2(Hid.pollingInterval ? Hid.pollingInterval : xbox.pollingInterval);
-        Hid.overrideInterval = reading_interval;
-        xbox.overrideInterval = reading_interval;
-        Serial.print("Override polling interval to ");
-        Serial.print(reading_interval);
-        Serial.print("ms!");
-        break;
-      case 't':
-        button = false;
-        total = 0;
-        digitalWrite(BUTTON_PIN, button);
-        time = 0;
-        Serial.println("Launching test");
-        randomSeed(analogRead(0));
-        nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
-        break;
-      case 's':
-        reading_interval = Serial.parseInt();
-        Hid.overrideInterval = reading_interval;
-        xbox.overrideInterval = reading_interval;
-        Serial.print("Override polling to ");
-        Serial.print(reading_interval);
-        Serial.println("ms!");
-        break;
-    }
-  }
-  
-  Usb.Task();
-  looptime = micros() - current_time;
-#endif
-  
-#endif
-
 }
 
-
-#endif
