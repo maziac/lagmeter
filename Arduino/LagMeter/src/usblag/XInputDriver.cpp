@@ -22,6 +22,10 @@
  e-mail   :  kristianl@tkjelectronics.com
  */
 
+// For automatic detection:  usblag oder lagmeter mode.
+//extern bool usblagMode; 
+
+
 #include "XInputDriver.h"
 #include "desc.h"
 // To enable serial debugging see "settings.h"
@@ -68,6 +72,7 @@ uint8_t testConfigurationXinput(USB *p, uint8_t addr, uint8_t conf, bool *isXbox
     descr_type = *( buf_ptr + 1 );
     if (descr_type == USB_DESCRIPTOR_INTERFACE) {
       USB_INTERFACE_DESCRIPTOR* intf_ptr = ( USB_INTERFACE_DESCRIPTOR* )buf_ptr;
+      //usblagMode = true;
       Serial.print("Found descriptor ");
       print_hex(intf_ptr->bInterfaceClass, 8);
       Serial.print(" ");

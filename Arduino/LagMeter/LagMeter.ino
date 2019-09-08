@@ -45,17 +45,10 @@ const int KEY_USBLAG_MEASURE = LCD_KEY_DOWN;
 const int KEY_USBLAG_TEST_BUTTON = LCD_KEY_SELECT;
 
 
-// Main lag testing mode.
-enum {
-  NONE = 0, // Just for starting.
-  USBLAG_MODE,  // Menu changes to usblag testing, i.e. the lag of a single controller is mesaured.
-  LAGMETER_MODE  // The lag measure mode, button press until phot sensor change.
-};
-
 // If USB device (game controller) is attached (via USB) then the mode is changed to
 // true. This will also change the menu.
-int mainMode = LAGMETER_MODE;
-int prevMainMode = NONE;  // previous mode
+int usblagMode = false;
+int prevUsblagMode = true;  // previous mode
 
 
 // Prints the main lag-meter menu.
@@ -335,12 +328,13 @@ class HIDController : public HIDDriver, public TimingManager {
         Serial.println("Warning! Multi-channel HID device not supported! Selecting only the first one.");
       }
       Serial.print("HID Controller initialized\n");
-      mainMode = USBLAG_MODE;
+      usblagMode = true;
       return 0;
     }
     uint8_t Release() {
       HIDDriver::Release();
       TimingManager::doPoll = false;
+      //usblagMode = false;
       return 0;
     }
     uint8_t Poll() { return pollDevice(VID, PID); }
@@ -383,9 +377,11 @@ void setup() {
   
 
   // usblag initilization
-  if (Usb.Init() == -1)
+  if (Usb.Init() == -1) {
     Serial.println("OSC did not start.");
-  delay(200);
+    Error(F("Error:"), F("USB problem!!!"));
+  }
+
   nextchange = micros() + 5000*1000;
 }
 
@@ -475,7 +471,7 @@ void handleUsblag() {
     case KEY_USBLAG_TEST_BUTTON:
       // ON/OFF of the button and showing the result. I.e. a quick test to see if the connection is OK.
       usblagTestButton();
-      return;
+      //return;
       break;
     case KEY_USBLAG_MEASURE:
       // Start testing usb device measurement
@@ -518,28 +514,30 @@ void handleUsblag() {
 // MAIN LOOP
 void loop() {
   // Check if main mode changed.
-  if(mainMode != prevMainMode) {
-    prevMainMode = mainMode;
-    switch(mainMode) {
-      case LAGMETER_MODE:
-        printLagMeterMenu();
-        break;
-      case USBLAG_MODE:
-        printUsblagMenu();
-        total = -1; // Show game controller action
-        break;  
+  if(usblagMode != prevUsblagMode) {
+    prevUsblagMode = usblagMode;
+    if(usblagMode) {
+      // Usblag mode
+      printUsblagMenu();
+      total = -1; // Show game controller action
+    }
+    else {
+      // Lagmeter mode
+      printLagMeterMenu();
     }
   }
 
-  switch(mainMode) {
-      case LAGMETER_MODE:
-        handleLagMeter();
-        break;
-      case USBLAG_MODE:
-        handleUsblag();
-        break;  
+  // Handle mode
+  if(usblagMode) {
+    // Usblag mode
+    handleUsblag();
+  }
+  else {
+    // Lagmeter mode
+    handleLagMeter();
   }
 
+  // Handle USB
   Usb.Task();
 }
 
