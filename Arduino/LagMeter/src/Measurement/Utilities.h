@@ -4,6 +4,11 @@
 #include <LiquidCrystal.h>
 
 
+
+// Sets the ADC clock (the lowest 3 bits)
+#define SET_ADC_CLOCK(bits)   (_SFR_BYTE(ADCSRA) = (_SFR_BYTE(ADCSRA) & 0b11111000) | bits)
+ 
+ 
 // Defines for the available LCD keys.
 enum {
   LCD_KEY_NONE,
@@ -23,5 +28,7 @@ void waitLcdKeyRelease();
 bool isAbort();
 void waitMs(int waitTime);
 void Error(const __FlashStringHelper* area, const __FlashStringHelper* error);
+char* secsToString(unsigned long time);
+char* longToString(unsigned long value);
 
 #endif

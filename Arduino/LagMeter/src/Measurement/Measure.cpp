@@ -27,7 +27,8 @@ const int COUNT_CYCLES = 100;
 #define SVGA_MIN_DIFF  20
 
 // The checked accuracy in ms:
-#define CHECK_ACCURACY  2
+#define CHECK_ACCURACY  1
+#define CHECK_ACCURACY_ERROR_STR "Err:Accuracy>1ms"
 
 
 // Initializes the pins.
@@ -139,7 +140,7 @@ void waitMsInput(int inputPin, int threshold, bool positiveThreshold, int waitTi
     // Check if waited too long (4 secs)
     if(currTime-watchdogTime > 4000) {
       // Error
-      Error(F("Error:"), F("Signal wrong"));
+      Error(nullptr, F("Err:Signal wrong"));
       break;
     }
   } while(time < waitTime);
@@ -299,7 +300,7 @@ L_ERROR:
   }
   else if(accuracyOvrflw) {    // Assure that measurement accuracy is good enough
     // Error
-    Error(F("Error:"), F("Accuracy >= 1ms"));
+    Error(F("Error:"), F(CHECK_ACCURACY_ERROR_STR));
   }
   else if(counterOvrflw) {    // Overflow?
     // Interrupt pending bit set -> Overflow happened.
@@ -310,7 +311,7 @@ L_ERROR:
   // Calculate time from counter value.
   long tcount1l = tcount1;
   tcount1l *= 64*adjust;
-  tcount1l = (tcount1l+500) / 1000; // with rounding
+  tcount1l = (tcount1l+500l) / 1000l; // with rounding
 
   return (int)tcount1l;
 }
@@ -714,15 +715,15 @@ void measureSvgaToMonitor() {
 
 
 
-   
+
 // Waits until the photo sensor (or SVGA value) value gets into range.
 // @param inputPin Pin from which the analog input is read. Photo sensor or SVGA.
 // @param pressTime The time he button press is simulated.
 // @param threshold The value to compare the inputPin value to.
 // @param positiveThreshold If true check that inputPin value is bigger, if false check that inputPin value is smaller.
 // @param maxMeasureTime In ms. The function is left after this time (if no signal is found). 
-// @return true if button press reaction was found, false if no reaction was found.
-bool checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool positiveThreshold, int maxMeasureTime) {
+// @return -1 if no reaction was found. Otherwise the used time.
+int checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool positiveThreshold, int maxMeasureTime) {
   int key = 1023;
   unsigned int tcount1 = 0;
   bool accuracyOvrflw = false;
@@ -832,17 +833,18 @@ bool checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool
   }
   else if(accuracyOvrflw) {    // Assure that measurement accuracy is good enough
     // Error
-    Error(F("Error:"), F("Accuracy >= 1ms"));
+    Error(nullptr, F(CHECK_ACCURACY_ERROR_STR));
   }
-  
-  /*
-  else if(counterOvrflw) {    // Assure that measurement accuracy is good enough
-    // Error
-    Error(F("Error:"), F("counterOvrflw"));
+  else if(counterOvrflw) {
+    return -1;
   }
-*/
 
-  return !counterOvrflw;
+  // Calculate time from counter value.
+  long tcount1l = tcount1 - tcnt1ValueTooLong;
+  tcount1l *= 64*adjust;
+  tcount1l = (tcount1l+500l) / 1000l; // with rounding
+
+  return (int)tcount1l;
 }
 
 
@@ -950,43 +952,71 @@ void measureMinPressTime() {
   lcd.print(F("Start testing..."));
   waitMs(1000); if(isAbort()) return;
   lcd.clear();
-  lcd.setCursor(0,1);
-  lcd.print(F("Time: "));
 
   // Measure: Start with 1ms
   int pressTime = 1;
+  unsigned long startTime;
+  unsigned long offsetTime;
+  char s[9+1];
+  unsigned long maxTime = 0;
+  unsigned long totalTime = 0;
   while(true) {
     // Print
     lcd.setCursor(0,0);
     lcd.print(pressTime);
-    lcd.print(F("ms: "));    
+    lcd.print(F("ms:"));    
   
-    int cycle = 0;
+    // Start measurement
+    offsetTime = 0;
+    startTime = millis();
+    unsigned long cycle = 0;
     while(true) {
       cycle ++;
-      // Print
-      lcd.setCursor(0,7);
-      lcd.print(cycle);
-      lcd.print(F("    "));
-      
+      if(cycle == 0) {
+        // Will take a long time 
+        while(getLcdKey() == LCD_KEY_NONE);  // Wait on key press 
+        return;
+      }
+
       // Wait until input changes
-      bool success = checkReactionWithPressTime(pin, 1, threshold, useSVGA, 300);
+      int time = checkReactionWithPressTime(pin, pressTime, threshold, useSVGA, 300);
       if(isAbort()) return;
-      if(!success) break;
+      if(time < 0) break;
+
+      // Calculate time 
+      offsetTime += time;
+      totalTime = millis() - startTime + offsetTime;
+      totalTime /= 1000l;  // in secs
+      
+      // Print count and time, e.g. "4k 1h"
+      snprintf(s, sizeof(s), "%s, %s", longToString(cycle), secsToString(totalTime));
+      lcd.setCursor(6,0);
+      lcd.print(s);  
+      lcd.print(F("    "));
 
       // Wait a random time to make sure we really get different results.
       int waitRnd = random(30, 80);
-      // Wait until input (photo sensor) changes
-      waitMsInput(IN_PIN_SVGA, threshold, false, waitRnd);
+      // Wait until input changes
+      waitMsInput(IN_PIN_SVGA, threshold, !useSVGA, waitRnd);
       if(isAbort()) return;
+    }
+
+    // Check for new max. time
+    if(totalTime > maxTime) {
+      // Print in 2nd line
+      lcd.setCursor(0,1);
+      lcd.print(pressTime);
+      lcd.print(F("ms:"));    
+      lcd.setCursor(6,1);
+      lcd.print(s);  
+      lcd.print(F("    "));
+      maxTime = totalTime;
     }
 
     // Increase pressTime
     pressTime += 1; // by 1ms
   }
 }
-
-
 
 
  

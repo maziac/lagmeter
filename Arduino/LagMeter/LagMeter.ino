@@ -37,7 +37,7 @@ However it was tested only with a 16MHz CPU.
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "0.9"
+#define SW_VERSION "0.10"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
@@ -376,8 +376,12 @@ void setup() {
   Serial.println(F("Serial connection up!"));
 #endif
 
+  // Increase ADC clock to speedup the analogRead function
+  SET_ADC_CLOCK(0b101);  // Use 38kHz (strange effects below 0b100)
+  int adc = analogRead(0); // throw away first value
+  
   // Random seed
-  randomSeed(1234);
+  randomSeed(adc);
 
   // Lagmeter initialization
   //pinMode(BUTTON_PIN, OUTPUT); Already setup by setupMeasurement.
@@ -395,6 +399,29 @@ void setup() {
   }
 
   nextchange = micros() + 5000*1000;
+
+
+#if 0
+// Test
+  Serial.println(secsToString(0l));
+  Serial.println(secsToString(59l));
+  Serial.println(secsToString(60l));
+  Serial.println(secsToString(60l+45l));
+  Serial.println(secsToString(2l*60l+30l));
+  Serial.println(secsToString(7l*60l+10l));
+  Serial.println(secsToString(10l*60l+25l));
+
+  Serial.println(longToString(0l));
+  Serial.println(longToString(1l));
+  Serial.println(longToString(999l));
+  Serial.println(longToString(1000l));
+  Serial.println(longToString(999000l));
+  Serial.println(longToString(999999l));
+  Serial.println(longToString(1000000l));
+  Serial.println(longToString(99000000l));
+  Serial.println(longToString(99999999l));
+  Serial.println(longToString(100000000l));
+#endif 
 }
 
 

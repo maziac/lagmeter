@@ -42,17 +42,6 @@ It would be beneficial if we could measure each lag individually but this is nor
 Only the sum of lags can be measured and conclusions might be drawn that may or may not be correct :-)
 
 
-## Additional lag by the measuring equipment
-
-The HW uses a relais to stimulate the button press and a phototransistor to measure the resulting change on the screen.
-Both have lags.
-I measured that the reed relais (Relais SIL 7271-D 5V) bounces for max 40us and has a switching delay which is smaller than 250us.
-The lag of phototransistors in general is in the magnitude of us.
-
-I measured the lag with a LED tight to the reed relais and the overall shown lag was always 1ms.
-So it's safe to assume the additional lag by relais and phototransistor is negligible.
-
-
 ## Influence of Intervals (Polling)
 
 Understanding the impact of polling intervals is essential when dealing with input lag.
@@ -70,21 +59,158 @@ There are at least:
 - The monitor signal HW: This as well uses the frame rate, i.e. 20 or 16.7ms, but might not be in sync (vsync) with the emulator.
 Note: Of course you could increase the frame rate to lower the interval/lower the latency. The problem is that if you use another frame rate than the source (i.e. the emulator) you may encounter other visual artefacts.
 
+The picture below tries to visualize the effect of the polling:
+~~~wavedrom
+{signal: [
+  
+  {name: "Relais",
+   wave: 'l....H.................',
+   node: '.....a'},
+  
+  {name: "Game Controller",
+   wave: '5..35..35..35..35..35..',
+   data: ["", "poll", "wait", "poll", "wait", "poll", "wait", "poll", "wait", "poll", "wait",],
+   node: '.......cC..dD..eF'},
+  
+  {name: "USB",
+   wave: '4.34.....34.....34.....',
+   data: ["", "poll", "t=8ms", "poll", "t=8ms", "poll", "t=8ms", "poll",],
+   node: '.........gG.....hH.....'},
+  
+  {name: "OS",
+   wave: 'z..5z.....5..z...5.z...',
+   data: ["delay", "delay", "delay",],
+   node: '..........i..I...j.J'},
+  
+  {name: "Application/Emulator",
+   wave: '434..................34',
+   data: ["", "poll", "frame n, t=20ms", "poll", "n+1", "poll",],
+   node: '.....................kK'},
+  ],
+
+edge:[
+      'a~>c',
+      'a~>d',
+      'a~>e',
+      
+      'C~>g',
+      'D~>h',
+
+      'G~>i',
+      'H~>j',
+
+      'J~>k',
+      'K~>l',
+      'l~>m'
+ ],
+
+}
+~~~
+Relais is the simulated button press. When it's pressed the game controller notices after a few ms depending of the firmware.
+This value is not directly provided to the OS. Instead the USB host controller (of the PC) polls at 8ms (default, 125Hz).
+The OS receives the value and provides it to the application after some delay. This delay should be short but is not necessarily fixed, i.e. depending on the current load of the CPU it might vary.
+Then the application, i.e. the emulator, reads the button value. It polls usually at the frame rate, i.e. 20ms for Europe.
+
+In best case all pollings happen just right after each other. In that case only a small delay, the delay of the OS, would be measurable.
+In worst case all polling intervals have to be added. I.e. Game controller interval (e.g. 10ms), USB interval (8ms), OS delay (5ms?), Emulator frame rate (20ms) = 10+8+5+20 = 43ms.
+
+I.e. already with these small value we end up with a jitter of 5ms to 43ms for a button press.
+But that is just the path to the emulator game controller input.
+
+The full path needs to draw and display something on the monitor:
+
+~~~wavedrom
+{signal: [
+  
+  {name: "Application/Emulator",
+   wave: '4...34.................',
+   data: ["frame n+1, t=20ms", "", "frame n+2, t=20ms", "",],
+   node: '....K'},
+
+  {name: "Screen (Out)",
+   wave: '5......5...............',
+   data: ["frame n+1", "frame n+2, t=20ms", "frame n+3",],
+   node: '.......l'},
+  
+  {name: "Monitor",
+   wave: '5......5.3.............',
+   data: ["", "delay", "frame n, t=20ms", "delay", "frame n+1, t=20ms",],
+   node: '.........m'},
+
+  {name: "Visible Response",
+   wave: '0........1.............',
+   data: ["", "delay", "frame n, t=20ms", "delay", "frame n+1, t=20ms",]},
+],
+
+edge:[
+      'a~>c',
+      'a~>d',
+      'a~>e',
+      
+      'C~>g',
+      'D~>h',
+
+      'G~>i',
+      'H~>j',
+
+      'J~>k',
+      'K~>l',
+      'l~>m'
+ ],
+}
+~~~
+The emulator needs at least one frame to calculate the next frame depending on the game controller's input (button press).
+(This is quite optimistic, often, depending on the emulated game, the emulator needs more frames. Then depending on the emulator's settings it might need additional frames, e.g. for triple buffering or for post processing of the screen output.)
+
+The rendered frame needs to be go out of PC. This is also done at frame rate and will add an additional delay.
+If the emulator's output is synched (VSYNC) with the PC screen output this delay can be reduced to 0.
+
+At the end the monitor will add some delay. This depends on the monitor. Modern monitors should be in range 1-4ms, older monitors could around 20ms.
+Sometimes monitors (especially TVs) may add post processing. This can increase the delay dramatically and should be turned off.
+
+For a synched emulator, a one frame emulator delay and a monitor with 4ms delay we will end up at: 20+0+4 = 24ms.
 
 
-<<xxxxx>>
+With the calculation above we end up with a theoretical lag for these explanatory values of
+[5ms;43ms] + 24ms = [29ms;71ms], i.e. **29ms to 71ms**.
 
 
-## HW
+# Additional lag by the measuring equipment
 
-### Schematics (TinkerCad)
+The HW uses a relais to stimulate the button press and a phototransistor to measure the resulting change on the screen.
+Both have lags.
+I measured that the reed relais (Relais SIL 7271-D 5V) bounces for max 40us and has a switching delay which is smaller than 250us.
+The lag of phototransistors in general is in the magnitude of us.
+
+I measured the lag with a LED tight to the reed relais and the overall shown lag was always 1ms.
+So it's safe to assume the additional lag by relais and phototransistor is negligible.
+
+
+
+# Emulator Pause Frame Stepping vs. Dynamic Delay
+
+The usual way to measure the lag of an emulator an an easy was is to pause the emulator,
+press a button and single-step the emulator frame-by-frame until a visual response is seen on the monitor.
+
+With this one can find out quite easily the lag of the game's logic that is tested.
+In e.g. MAME this can be done by pressing 'P' (for pause) and then pressing SHIFT-P to single step each frame.
+
+Unfortunately this is only half of the truth since the dynamic behaviour is little different.
+If the emulator e.g. use triple buffering or post processing the additional delay cannot be seen by frame-stepping but the delay is there when running at normal speed.
+
+So, even if you see that there is only one frame delay when single stepping the frames, most probably at least one more frame is used e.g. for buffering/screen processing.
+
+
+# HW
+
+## Schematics (TinkerCad)
 
 ![](HW/LagMeter_TinkerCad.jpg)
 
 Note: You don't need to wire the LCD and buttons if you use the LCD Keypad shield. It already contains the buttons and teh correct connections.
 
 
-### Componentes List
+## Components List
 
 - Arduino Uno R3
 - LCD Keypad Shield
@@ -95,21 +221,64 @@ Note: You don't need to wire the LCD and buttons if you use the LCD Keypad shiel
 
 
 
-## SW
+# SW
 
-### Arduino SW
+## Arduino SW
 
 There are 2 main functionalities implemented:
-- Press "Test" button: Will simply output the value measured at the photo resistor. At the same time a button press/release is stimulated at a frequency of approx. 1s. This is to check that the photo resistor is working and to check the values when button is pressed and released.
-- Press "Start" button: This is the main program, i.e. the lag measurement. It starts with a short calibration phase. During calibration the button is pressed for a second and the monitor output, the photo transistor value is read. 
-Then the button is released and the photo transistor value is also read.
-Afterwards 100 measurement cycles are done with button presses and releases. For each button press the time is measured until an action occurs on the screen.
+- The "LagMeter" which stimulated a game controller button and measures the time until a visual response is seen on the monitor.
+- The "UsblagLcd" which directly measures the lag of a USB game controller by stimulating a button and measuring the response through the USB protocol. This part is derived from the [usblag](https://gitlab.com/loic.petit/usblag) project. It adds an UI via an LCD display.
+
+
+The device starts up in the LagMeter mode and stays there.
+![](<<picture of Start-Screen "LagMeter">>)
+
+To change to UsblagLCD mode you need to attach an USB game controller. If it is recognized the display changes:
+![](<<picture of Start-Screen "UsblagLCD">>)
+
+Note: the UsblagLCD mode cannot be left automatically, you need to press reset to get back to the LagMeter mode.
+
+
+### LagMeter 
+
+![](<<picture of Start-Screen "LagMeter">>)
+
+The LagMeter uses 5 different buttons. Each button offers a different test:
+- **"Test Button"**: Will simply output the value measured at the photo resistor. At the same time a button press/release is stimulated at a frequency of approx. 1s. This is to check that the photo resistor is working and to check the values when button is pressed and released.
+- **"Total Monitor Lag"**: It starts with a short calibration phase. During calibration the button is pressed for a second and the monitor output, i.e. the photo transistor value is read. 
+Then the button is released and the photo transistor value is read again.
+Afterwards 100 measurement cycles are done with button presses and releases. For each button press the time is measured until an action occurred on the screen.
 At the end the minimum, maximum and average time is shown.
 If a measurement takes too long (approx 4 secs) an error is shown.
+You need a program that reacts on game controller button presses. E.g. jstest-gtk in Linux. The photo sensor need to be arranged just above the (small) screen area that changes when the button is pressed.
+For the tests with the emulator you can use the ZX Spectrum program (sna-file) in this repository. It reads the (ZX Spectrum) keyboard and toggles the screen (e.g. black/white). 
+In the emulator you need to map the game controller button to the "0" Spectrum key.
+- **"Total SVGA Lag"**: Same as "Total Monitor Lag" but instead of measuring the photo transitor it monitors the SVGA output of the PC. I.e. as a result you get the lag without the monitor.
+- **"Monitor Lag"**: This measures the monitor lag itself. For this you need to connect all cables: Game controller button, photo transitor (at monitor) and SVGA at the SVGA output ofthe PC (because the monitor is connected as well you need a Y-SVGA adapter to connect both at the same time).
+Please note: monitor manufacturers have very sophisticated ways to measure the latency. The way used here is very simple, so the results may differ from your monitor's specification.
+- **"Minimum Button Press Time/Reliability Test"**: It measures the minimumt time required to press the game controller's button so that it is reliably recognized. Because of polling intervals (see above) it can happen that a button press is not recognized at all if it is too short. This test measures the time and the number of button presses for a certain button press time. Whenever a button press doesn't lead to a visual response the minimum press time is increased andthe test starts all over again.
+The test will run "forever", i.e. you can leave it running for a day to see if your system really catches all button presses. Or to put in another way: the tests shows you how long you have to press the button at a minimum so that it is reliably recognized.
+To give some numbers: my measurements showed that with a micro switch the minimum achievable press time is around 40ms, but with leaf switches you could get down to e.g. 10-20ms. If this is good or bad depends on the rest of the system. In general it is nice to allow for short times but if the time gets smaller than the polling rate of your system than it might lead to unrecognized button presses.
+
 
 You can interrupt all measurements by pressing any key.
 
-This consists of a program that stimulates a button through an OUTPUT_PIN. Then it measures the time until the input value (from a photo resistor) changes.
+
+### UsblagLcd
+
+![](<<picture of Start-Screen "UsblagLCD">>)
+
+The UsblagLcd uses 2 different buttons with different tests:
+- **"Test Button"**: Will toggle between button press/release at a frequency of approx. 1s. You should see the LCD display changing when a game controller's button is pressed. 
+For a simple test you can attach your game controller and press the buttons manually. You should see the LCD display changing.
+Then you can open your game controller and attach the cables to a button to simulate button presses. If this works you see the LCD display changing at the toggle frequency.
+- **"Game Controller Lag"**: Measures the lag of the game controller, i.e. from button press to USB response.
+Conenct the button of your game controller with the cable and start the test.
+It does 100 cycles and shows the minimum, maximum and average time used by the controller.
+The test always uses a USB polling rate of 1ms.
+Note: The original usblag project used 1000 cycles. I reduced this to 100 to get faster results.
+
+You can interrupt all measurements by pressing any key.
 
 
 # Validation
