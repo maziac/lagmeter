@@ -953,8 +953,8 @@ void measureMinPressTime() {
   waitMs(1000); if(isAbort()) return;
   lcd.clear();
 
-  // Measure: Start with 1ms
-  int pressTime = 1;
+  // Measure: Start with 15ms
+  int pressTime = 15;
   unsigned long startTime;
   unsigned long offsetTime;
   char s[9+1];

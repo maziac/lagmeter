@@ -37,7 +37,7 @@ However it was tested only with a 16MHz CPU.
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "0.10"
+#define SW_VERSION "0.11"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
@@ -60,6 +60,9 @@ const int KEY_USBLAG_TEST_BUTTON = LCD_KEY_SELECT;
 int usblagMode = false;
 int prevUsblagMode = true;  // previous mode
 
+// The poll interval requested by the attached USB device.
+int requestedPollInterval = 0;
+
 
 // Prints the main lag-meter menu.
 void printLagMeterMenu() {
@@ -74,7 +77,9 @@ void printUsblagMenu() {
   lcd.clear();
   lcd.print(F("** USB Lag  **"));
   lcd.setCursor(0, 1);
-  lcd.print(F("Game Controller"));
+  lcd.print(F("Req. poll="));
+  lcd.print(requestedPollInterval);
+  lcd.print(F("ms"));
 }
 
 
@@ -94,13 +99,16 @@ float usblagAvg;
 bool usbEventToggle = false;
 void printUsbLag(float measuredTime) {
     if(total < 0) {
-      // Print something in 2nd line. Can be used as a test if game controller reacts.
       lcd.setCursor(0,1);
-      usbEventToggle = !usbEventToggle;
+      // Print req. poll interval
+      lcd.print(requestedPollInterval);
+      lcd.print(F("ms "));
+      // Print something in 2nd line. Can be used as a test if game controller reacts.
+       usbEventToggle = !usbEventToggle;
       if(usbEventToggle)
-        lcd.print(F("####----####----"));
+        lcd.print(F("####----####"));
       else
-        lcd.print(F("----####----####"));
+        lcd.print(F("----####----"));
       return;
     }
     if(total > USBLAG_CYCLES )
@@ -313,6 +321,7 @@ class XBoxController : public XInputDriver, public TimingManager {
       }
       report_mask.do_mask = false;
       usblagMode = true;
+      requestedPollInterval = pollingInterval;
       return 0;
     }
     uint8_t Release() {
@@ -341,6 +350,7 @@ class HIDController : public HIDDriver, public TimingManager {
       }
       Serial.print("HID Controller initialized\n");
       usblagMode = true;
+      requestedPollInterval = pollingInterval;
       return 0;
     }
     uint8_t Release() {

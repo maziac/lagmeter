@@ -401,6 +401,15 @@ Problem exactly like [here](https://askubuntu.com/questions/624075/how-do-i-set-
 - DragonRise: 115Hz
 
 
+Note: when using the teensy as joystick with a requested poll interval of 1ms the Linux is using the 1ms poll interval. Also evhz is showing 1000Hz (but it's important to use the joystick coordinated, e.g. Joystick.X(analogRead(0)), otherwise evhz will not find any event.)
+
+USB requested poll rate:
+- Buffalo: 10ms
+- TeensyLC: 1ms
+- DragonRise: 10ms
+- Ultimarc: 10ms
+
+
 
 # Intermediate Results
 
