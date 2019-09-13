@@ -51,7 +51,8 @@ const int KEY_MEASURE_SVGA = LCD_KEY_UP;
 const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_RIGHT;
 const int KEY_MEASURE_MIN_TIME = LCD_KEY_LEFT;
 // usblag:
-const int KEY_USBLAG_MEASURE = LCD_KEY_DOWN;
+const int KEY_USBLAG_MEASURE_1MS = LCD_KEY_DOWN;
+const int KEY_USBLAG_MEASURE_8MS = LCD_KEY_UP;
 const int KEY_USBLAG_TEST_BUTTON = LCD_KEY_SELECT;
 
 
@@ -525,20 +526,40 @@ void handleUsblag() {
       usblagTestButton();
       //return;
       break;
-    case KEY_USBLAG_MEASURE:
+    case KEY_USBLAG_MEASURE_1MS:
       // Start testing usb device measurement
       button = false;
       total = 0;
       digitalWrite(BUTTON_PIN, button);
       time = 0;
-      Serial.println("Launching test");
+      Serial.print(F("Launching test"));
       nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
       // Use USB polling interval of 1ms.
       Hid.overrideInterval = 1;
       xbox.overrideInterval = 1;
       // Inform user
       lcd.clear();
-      lcd.println(F("Start testing..."));
+      lcd.print(F("1ms poll..."));
+
+      // Wait for potential lag time
+      waitMs(1000); 
+      lcd.clear();
+      if(isAbort()) return;
+      break;
+    case KEY_USBLAG_MEASURE_8MS:
+      // Start testing usb device measurement
+      button = false;
+      total = 0;
+      digitalWrite(BUTTON_PIN, button);
+      time = 0;
+      Serial.print(F("Launching test"));
+      nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
+      // Use USB polling interval of 8ms.
+      Hid.overrideInterval = 8;
+      xbox.overrideInterval = 8;
+      // Inform user
+      lcd.clear();
+      lcd.println(F("8ms poll..."));
       // Wait for potential lag time
       waitMs(1000); 
       lcd.clear();
