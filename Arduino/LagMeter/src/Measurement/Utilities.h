@@ -19,6 +19,9 @@ enum {
   LCD_KEY_DOWN
 };
 
+// Threshold for keys. Below a key is pressed, above no key is pressed.
+#define LCD_KEY_PRESS_THRESHOLD   800
+
 
 extern bool abortAll;
 extern LiquidCrystal lcd;

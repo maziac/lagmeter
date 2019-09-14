@@ -16,7 +16,7 @@ LiquidCrystal lcd(19, 17, 18, 4, 5, 6, 7);
 int getLcdKey() {
   int x = analogRead(0);
   // Return immediately if nothing is pressed
-  if (x >= 800) 
+  if (x >= LCD_KEY_PRESS_THRESHOLD) 
     return LCD_KEY_NONE;
   
   waitLcdKeyRelease();
@@ -39,7 +39,7 @@ void waitLcdKeyRelease() {
   // Some key has been pressed
   delay(100);	// poor man's debounce
   // Wait until released
-  while(analogRead(0) < 800);
+  while(analogRead(0) < LCD_KEY_PRESS_THRESHOLD);
   delay(100); // debounce
 }
 

@@ -37,7 +37,7 @@ However it was tested only with a 16MHz CPU.
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "0.11"
+#define SW_VERSION "0.12"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
@@ -584,7 +584,21 @@ void handleUsblag() {
 }
 
 
-// MAIN LOOP
+/*
+void loop() {
+  static bool out;
+  Hid.overrideInterval = 8;
+xbox.overrideInterval = 8;
+  pinMode(3, OUTPUT);
+  out = !out;
+  digitalWrite(3, out);
+  Usb.Task();
+  //delay(1);
+}
+*/
+
+
+// MAIN LOOP 
 void loop() {
   // Check if main mode changed.
   if(usblagMode != prevUsblagMode) {

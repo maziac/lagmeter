@@ -20,6 +20,12 @@ const int COUNT_CYCLES = 100;
 // Define this for comparison measurements with an oscilloscope or a camera.
 //#define OUT_PIN_BUTTON_COMPARE_TIME 3
 
+// Keys for the measurement during 'measureMinPressTime'
+const int KEY_MEASURE_MIN_UP1 = LCD_KEY_UP;
+const int KEY_MEASURE_MIN_DOWN1 = LCD_KEY_DOWN;
+const int KEY_MEASURE_MIN_UP10 = LCD_KEY_RIGHT;
+const int KEY_MEASURE_MIN_DOWN10 = LCD_KEY_LEFT;
+
 ///////////////////////////////////////////////////////////////////
 
 
@@ -115,7 +121,8 @@ struct MinMax getMaxMinAnalogIn(int inputPin, int measTime) {
 // @param threshold The value to compare the inputPin value to.
 // @param positiveThreshold If true check that inputPin value is bigger, if false check that inputPin value is smaller.
 // @param waitTime The time to wait for.
-void waitMsInput(int inputPin, int threshold, bool positiveThreshold, int waitTime) {
+// @return The pressed key or LCD_KEY_NONE.
+int waitMsInput(int inputPin, int threshold, bool positiveThreshold, int waitTime) {
   // Simulate joystick button
   digitalWrite(OUT_PIN_BUTTON, LOW); 
   // Wait
@@ -135,8 +142,14 @@ void waitMsInput(int inputPin, int threshold, bool positiveThreshold, int waitTi
     // Get time
     int currTime = millis();
   	time = currTime - startTime;
-    if(isAbort())
-      return;
+
+    // Check for key press 
+    int key = getLcdKey();
+    if(key != LCD_KEY_NONE) {
+        abortAll = true;
+        return key;
+    }
+
     // Check if waited too long (4 secs)
     if(currTime-watchdogTime > 4000) {
       // Error
@@ -144,6 +157,8 @@ void waitMsInput(int inputPin, int threshold, bool positiveThreshold, int waitTi
       break;
     }
   } while(time < waitTime);
+
+  return LCD_KEY_NONE;
 }
 
     
@@ -222,7 +237,7 @@ int measureLag(int inputPin, int threshold, bool positiveThreshold, int inputPin
         // Check if key pressed
         key = analogRead(0);
         // Return immediately if something is pressed
-        if (key < 800) {
+        if (key < LCD_KEY_PRESS_THRESHOLD) {
           keyPressed = true;
           goto L_ERROR;
         } 
@@ -266,7 +281,7 @@ int measureLag(int inputPin, int threshold, bool positiveThreshold, int inputPin
     // Check if key pressed
     key = analogRead(0);
     // Return immediately if something is pressed
-    if (key < 800) {
+    if (key < LCD_KEY_PRESS_THRESHOLD) {
       keyPressed = true;
       break;
     }
@@ -794,10 +809,10 @@ int checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool 
 
     // Check if key pressed
     key = analogRead(0);
-    // Return immediately if something is pressed
-    if (key < 800) {
+    //Check if something is pressed
+    if (key < LCD_KEY_PRESS_THRESHOLD) {
+      // key pressed -> abort
       keyPressed = true;
-      break;
     }
 
     // Check for time out
@@ -828,8 +843,9 @@ int checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool 
 
   // Key pressed ? -> Abort
   if(keyPressed) {
-    waitLcdKeyRelease();
-    abortAll = true;
+    //waitLcdKeyRelease();
+    //abortAll = true;
+    return -1;
   }
   else if(accuracyOvrflw) {    // Assure that measurement accuracy is good enough
     // Error
@@ -845,6 +861,30 @@ int checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool 
   tcount1l = (tcount1l+500l) / 1000l; // with rounding
 
   return (int)tcount1l;
+}
+
+
+// Checks the pressed key and returns a corresponding difference time for
+// the press time.
+// 
+int checkKeyToChangePressTime(int key = LCD_KEY_NONE) {
+  // Check if we need to read the key press
+  if(key == LCD_KEY_NONE) {
+    // Get key
+    key = getLcdKey();
+  }
+
+  // Check which key is pressed
+  if(key == KEY_MEASURE_MIN_UP1)
+    return 1;
+  if(key == KEY_MEASURE_MIN_DOWN1)
+    return -1;
+  if(key == KEY_MEASURE_MIN_UP10)
+    return 10;
+  if(key == KEY_MEASURE_MIN_DOWN10)
+    return -10;
+
+  return 0;
 }
 
 
@@ -897,6 +937,9 @@ void measureMinPressTime() {
   
   // Check if SVGA signal can be used
   bool useSVGA = (buttonOnSVGA.max-buttonOffSVGA.max >= SVGA_MIN_DIFF);
+  //Serial.println(F("SVGA"));
+  //Serial.println(buttonOnSVGA.max);
+  //Serial.println(buttonOffSVGA.max);
   int threshold;
   int pin;
 
@@ -961,6 +1004,7 @@ void measureMinPressTime() {
   unsigned long maxTime = 0;
   unsigned long totalTime = 0;
   while(true) {
+    int pressDiff = 1;
     // Print
     lcd.setCursor(0,0);
     lcd.print(pressTime);
@@ -980,8 +1024,19 @@ void measureMinPressTime() {
 
       // Wait until input changes
       int time = checkReactionWithPressTime(pin, pressTime, threshold, useSVGA, 300);
-      if(isAbort()) return;
-      if(time < 0) break;
+      // Check key
+      if(time < 0) {
+        int key = analogRead(0);
+        if (key < LCD_KEY_PRESS_THRESHOLD) {
+          pressDiff = checkKeyToChangePressTime();
+          if(pressDiff == 0) {
+            // Other key pressed
+            abortAll = true;
+            return;
+          }
+        }
+        break;
+      }
 
       // Calculate time 
       offsetTime += time;
@@ -997,8 +1052,19 @@ void measureMinPressTime() {
       // Wait a random time to make sure we really get different results.
       int waitRnd = random(30, 80);
       // Wait until input changes
-      waitMsInput(IN_PIN_SVGA, threshold, !useSVGA, waitRnd);
-      if(isAbort()) return;
+      int key = waitMsInput(IN_PIN_SVGA, threshold, !useSVGA, waitRnd);
+      // Check for keypress
+      if(key != LCD_KEY_NONE) {
+        pressDiff = checkKeyToChangePressTime(key);
+        if(pressDiff == 0) {
+          // Other key pressed
+          abortAll = true;
+          return;
+        }
+        abortAll = false;
+      }
+      if(abortAll)
+        return;
     }
 
     // Check for new max. time
@@ -1013,8 +1079,10 @@ void measureMinPressTime() {
       maxTime = totalTime;
     }
 
-    // Increase pressTime
-    pressTime += 1; // by 1ms
+    // Change press time (in ms)
+    pressTime += pressDiff;
+    if(pressTime < 1)
+      pressTime = 1;
   }
 }
 
