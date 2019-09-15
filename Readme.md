@@ -259,6 +259,11 @@ Please note: monitor manufacturers have very sophisticated ways to measure the l
 - **"Minimum Button Press Time/Reliability Test"**: It measures the minimumt time required to press the game controller's button so that it is reliably recognized. Because of polling intervals (see above) it can happen that a button press is not recognized at all if it is too short. This test measures the time and the number of button presses for a certain button press time. Whenever a button press doesn't lead to a visual response the minimum press time is increased andthe test starts all over again.
 The test will run "forever", i.e. you can leave it running for a day to see if your system really catches all button presses. Or to put in another way: the tests shows you how long you have to press the button at a minimum so that it is reliably recognized.
 To give some numbers: my measurements showed that with a micro switch the minimum achievable press time is around 40ms, but with leaf switches you could get down to e.g. 10-20ms. If this is good or bad depends on the rest of the system. In general it is nice to allow for short times but if the time gets smaller than the polling rate of your system than it might lead to unrecognized button presses.
+Wit a few buttons you can change the press time:
+  - +1ms
+  - -1ms
+  - +10ms
+  - -10ms
 
 
 You can interrupt all measurements by pressing any key.

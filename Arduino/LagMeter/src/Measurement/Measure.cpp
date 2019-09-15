@@ -1067,6 +1067,13 @@ void measureMinPressTime() {
         return;
     }
 
+    // Print to serial
+    Serial.print(pressTime);
+    Serial.print(F("\t"));
+    Serial.print(cycle);
+    Serial.print(F("\t"));
+    Serial.println(totalTime);
+
     // Check for new max. time
     if(totalTime > maxTime) {
       // Print in 2nd line
