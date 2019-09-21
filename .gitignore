@@ -4,3 +4,5 @@ notes.md
 *.list
 **/.tmp/
 build/
+inout
+
