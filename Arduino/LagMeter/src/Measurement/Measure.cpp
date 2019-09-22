@@ -1,6 +1,6 @@
 #include "Utilities.h"
 #include "Measure.h"
-#include "Arduino.h"
+#include <Arduino.h>
 
 ///////////////////////////////////////////////////////////////////
 // Pin configuration:
