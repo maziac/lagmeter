@@ -6,11 +6,11 @@
  * Reads joystick/gamepad events and displays them.
  *
  * Compile:
- * gcc -g -Wall InputOutput.cpp
+ * gcc -g -Wall XLagTest.cpp
  * or make.
  *
  * Run e.g.:
- * ./joystick /dev/input/jsX /dev/serial/by-id/usb-Maziac_Arcade_Joystick_Encoder_5668360-if00 
+ * ./xlagtest [/dev/input/jsX]
  *
  * See also:
  * https://www.kernel.org/doc/Documentation/input/joystick-api.txt
@@ -34,6 +34,9 @@
 #include <stdlib.h>
 #include <linux/joystick.h>
 
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xos.h>
 
 /**
  * Reads a joystick event from the joystick device.
@@ -110,20 +113,65 @@ size_t get_axis_state(struct js_event *event, struct axis_state axes[3])
 }
 
 
-// Writes a digital output value.
-// fd: Serial device
-// dout: dout number
-// on: true/or false. On or off.
-void write_dout(int fd, int dout, bool on) {
-    char buffer[100];
-    sprintf(buffer, "o%d=%d\n", dout, on? 1 : 0);
-    printf("%s", buffer);
-    int len = strlen(buffer); 
-    ssize_t result = write(fd, buffer, len);
-    if(result != len) {
-        perror("Failed to write to serial");
-        exit(-1);
-    }
+// X11
+Display *dis;
+int screen;
+Window win;
+GC gc;
+
+void init_x() {
+	/* get the colors black and white (see section for details) */
+	unsigned long black,white;
+
+	/* use the information from the environment variable DISPLAY 
+	   to create the X connection:
+	*/	
+	dis=XOpenDisplay((char *)0);
+   	screen=DefaultScreen(dis);
+	black=BlackPixel(dis,screen),	/* get color black */
+	white=WhitePixel(dis, screen);  /* get color white */
+
+	/* once the display is initialized, create the window.
+	   This window will be have be 200 pixels across and 300 down.
+	   It will have the foreground white and background black
+	*/
+   	win=XCreateSimpleWindow(dis,DefaultRootWindow(dis),0,0,	
+		200, 300, 5, white, black);
+
+	/* here is where some properties of the window can be set.
+	   The third and fourth items indicate the name which appears
+	   at the top of the window and the name of the minimized window
+	   respectively.
+	*/
+	XSetStandardProperties(dis,win,"My Window","HI!",None,NULL,0,NULL);
+
+	/* this routine determines which types of input are allowed in
+	   the input.  see the appropriate section for details...
+	*/
+	XSelectInput(dis, win, ExposureMask|ButtonPressMask|KeyPressMask);
+
+	/* create the Graphics Context */
+        gc=XCreateGC(dis, win, 0,0);        
+
+	/* here is another routine to set the foreground and background
+	   colors _currently_ in use in the window.
+	*/
+	XSetBackground(dis,gc,white);
+	XSetForeground(dis,gc,black);
+
+	/* clear the window and bring it on top of the other windows */
+	XClearWindow(dis, win);
+	XMapRaised(dis, win);
+}
+
+void close_x() {
+/* it is good programming practice to return system resources to the 
+   system...
+*/
+	XFreeGC(dis, gc);
+	XDestroyWindow(dis,win);
+	XCloseDisplay(dis);	
+	exit(1);				
 }
 
 
@@ -132,8 +180,6 @@ int main(int argc, char *argv[])
 {
     const char* js_device;
     int js;
-    const char* serial_device;
-    int serial;
     struct js_event event;
     struct axis_state axes[3] = {};
     size_t axis;
@@ -152,19 +198,6 @@ int main(int argc, char *argv[])
     }
 
 
-    // Open serial port
-    if (argc < 3) {
-        printf("No serial port given.\n");
-        return -1;
-    }
-    serial_device = argv[2];
-    serial = open(serial_device, O_RDWR | O_SYNC);
-    printf("Serial device=%s (%d)\n", serial_device, serial);
-    if (serial == -1) {
-        perror("Could not open serial device");
-        return -1;
-    }
-
 
     /* This loop will exit if the controller is unplugged. */
     while (read_event(js, &event) == 0)
@@ -173,7 +206,6 @@ int main(int argc, char *argv[])
         {
             case JS_EVENT_BUTTON:
                 printf("Button %u %s\n", event.number, event.value ? "pressed" : "released");
-                write_dout(serial, 1, event.value);
                 break;
             case JS_EVENT_AXIS:
                 axis = get_axis_state(&event, axes);
@@ -186,7 +218,6 @@ int main(int argc, char *argv[])
         }
     }
 
-    close(serial);
     close(js);
     return 0;
 }

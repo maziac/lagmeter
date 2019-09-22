@@ -10,7 +10,7 @@
  * or make.
  *
  * Run e.g.:
- * ./joystick /dev/input/jsX /dev/serial/by-id/usb-Maziac_Arcade_Joystick_Encoder_5668360-if00 
+ * ./inout /dev/input/jsX /dev/serial/by-id/usb-Maziac_Arcade_Joystick_Encoder_5668360-if00 
  *
  * See also:
  * https://www.kernel.org/doc/Documentation/input/joystick-api.txt
