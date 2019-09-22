@@ -175,6 +175,16 @@ With the calculation above we end up with a theoretical lag for these explanator
 [5ms;43ms] + 24ms = [29ms;71ms], i.e. **29ms to 71ms**.
 
 
+## Interpret Measurement Results with Polling
+
+When measuring delays and polling is involved the measured times vary between a minimum and a maximum value.
+If the count of measurements is large enough the minimum measured time is the time as if there weren't any influence of the polling. 
+Whereas the maximum value adds up all polling intervals.
+I.e. max-min shows us the time that is lost due to polling.
+At least if nothing unforeseen happens: In an operating system like linux, windows or mac it can, of course, always happen that some process delays other process for a short while. 
+So the max-min value is expected to be bigger than the sum of all unsynchronized polling times.
+
+
 # Additional lag by the measuring equipment
 
 The HW uses a relais to stimulate the button press and a phototransistor to measure the resulting change on the screen.
@@ -419,6 +429,10 @@ USB requested poll rate:
 # Intermediate Results
 
 (Mainly notes to myself)
+
+- The delay of the Eizo itself is 38ms (DDVI) and 30ms (SVGA). The BenQ has 12-13ms no matter what input.
+- Eizo SVGA input is faster than EIZO DVI input by 8ms. DVI = 38ms, SVGA = 30ms. The delay is very constant. But this means 1.5 frames delay which is far too big. This monitor needs to be exchanged. 
+- NUC video output: There is no difference in lag for the HDMI and the SVGA output.
 
 - The vertical screen position (not the horizontal) matters for the lag measurement. 
 The more the photo sensor is positioned to the bottom the bigger the values. From middle to bottom this is approx. 7ms for the minimum.
