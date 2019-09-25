@@ -381,6 +381,15 @@ It has no influence on lag. Same lag if 'Standard' or 'Game'.
 - This monitor is so old it has no settings that could influence the lag.
 
 
+### USB Encoders (game controller)
+
+Here are the tested devices together with their default polling rates.
+- Buffalo Gampad: 10ms
+- DragonRise, ZeroDelay USB Encoder: 10ms
+- Ultimarc U360 Stik: 10ms
+- FastestJoystick (TeensyLC): 1ms
+
+
 ## SW
 
 - Linux:	Kernel 4.15.0, Ubuntu 16.04.1
@@ -426,9 +435,49 @@ USB requested poll rate:
 
 
 
+# Tests
+
+# Joystick turnaround time
+
+With FastestJoystick it could be seen that the OS response time is a 1ms.
+So the test setup could be used to test also other Joysticks.
+
+Setup:
+1. The 'FastestJoystick' is conencted via USB to the NUC (linux) system. It is used tp outut a signal.
+2. The USB-Joystick-under-test is connected to the NUC (linux) system.
+3. The 'InputOutput' program is started
+4. It will output a digital signal for each button press
+
+With the LagMeter and the digital output connected to the SVGA input (SVGA input is just an analog input) we measure the minimum response time.
+
+## FastestJoystick (Teensy)
+
+Constant value of 2ms for more than a day or a million button clicks.
+(1457671 button presses, 105240 secs).
+
+
+## Buffalo
+
+Stopped after 10 mins:
+9ms for 10min, 5000 cycles.
+
+
+
 # Intermediate Results
 
 (Mainly notes to myself)
+
+- Monitor delay dependend on position:
+With BenQ: If the photosensor is positioned at the top the delay is 11ms (to SVGA).
+If it is positioned at the bottom the delay is 20ms (toSVGA). 
+But this can be explained: the SVGA already start to measure with the first while line, i.e. the top line.
+With my measurements I chose a position always at the top.
+
+- Tests with 'inout' running on NUC and FastestJoytick:
+	Turnaround time. Lag from inout (Joystick button) to output (DOUT). While running ‚inout‘ program on PC (linux).	
+	Measured 3-5ms.	
+  This means: There is almost no overhead for the OS. Input delay is [0.2;1.2]ms. Output delay is [0;1]ms. Total [0.2;2.2]. The variation is exactly 2ms. So the OS delay is only ca. 3ms.
+  This even does not change if in parallel an emulator is running or started.
 
 - The delay of the Eizo itself is 38ms (DDVI) and 30ms (SVGA). The BenQ has 12-13ms no matter what input.
 - Eizo SVGA input is faster than EIZO DVI input by 8ms. DVI = 38ms, SVGA = 30ms. The delay is very constant. But this means 1.5 frames delay which is far too big. This monitor needs to be exchanged. 
@@ -436,7 +485,7 @@ USB requested poll rate:
 
 - The vertical screen position (not the horizontal) matters for the lag measurement. 
 The more the photo sensor is positioned to the bottom the bigger the values. From middle to bottom this is approx. 7ms for the minimum.
-This correlates quite good with 20ms for a full screen (half = 10,approx 7).
+This correlates quite good with 20ms for a full screen (half = 10, approx 7).
 - BenQ is approx. 30ms faster than EIZO-DVI (minimum).
 - EIZO-SVGA is approx. 8ms faster than EIZO-DVI (minimum).
 => Could be that SVGA output is 8ms faster than HDMI output from the NUC. Then, if BenQ would have an SVGA input a lag of 30ms (minimum could be achievable).
@@ -478,7 +527,7 @@ Video comparing zero delay vs. Arduino encoder. zero delay is lagging.
 - ["Warum haben Emulatoren eine Eingabeverzögerung?" by MarcTV](https://marc.tv/warum-haben-emulatoren-eine-eingabeverzoegerung/)
 - [Linux USB polling rate](https://wiki.archlinux.org/index.php/Mouse_polling_rate)
 - [evhz](https://gitlab.com/iankelling/evhz)
-
+- [FastestJoystick](https://github.com/maziac/fastestjoystick)
 
 
 # License
