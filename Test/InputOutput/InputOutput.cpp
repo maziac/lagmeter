@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
         {
             case JS_EVENT_BUTTON:
                 printf("Button %u %s\n", event.number, event.value ? "pressed" : "released");
-                write_dout(serial, 1, event.value);
+                write_dout(serial, 0, event.value);
                 break;
             case JS_EVENT_AXIS:
                 axis = get_axis_state(&event, axes);

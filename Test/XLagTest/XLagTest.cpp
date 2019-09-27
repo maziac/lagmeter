@@ -49,11 +49,7 @@ int read_event(int fd, struct js_event *event)
 
     bytes = read(fd, event, sizeof(*event));
 
-    if (bytes == sizeof(*event))
-        return 0;
-
-    /* Error, could not read full event. */
-    return -1;
+    return bytes;
 }
 
 /**
@@ -118,10 +114,10 @@ Display *dis;
 int screen;
 Window win;
 GC gc;
+unsigned long black,white;
 
 void init_x() {
 	/* get the colors black and white (see section for details) */
-	unsigned long black,white;
 
 	/* use the information from the environment variable DISPLAY 
 	   to create the X connection:
@@ -143,7 +139,7 @@ void init_x() {
 	   at the top of the window and the name of the minimized window
 	   respectively.
 	*/
-	XSetStandardProperties(dis,win,"My Window","HI!",None,NULL,0,NULL);
+	XSetStandardProperties(dis,win,"Press q to quit","",None,NULL,0,NULL);
 
 	/* this routine determines which types of input are allowed in
 	   the input.  see the appropriate section for details...
@@ -151,7 +147,7 @@ void init_x() {
 	XSelectInput(dis, win, ExposureMask|ButtonPressMask|KeyPressMask);
 
 	/* create the Graphics Context */
-        gc=XCreateGC(dis, win, 0,0);        
+    gc=XCreateGC(dis, win, 0,0);        
 
 	/* here is another routine to set the foreground and background
 	   colors _currently_ in use in the window.
@@ -175,12 +171,17 @@ void close_x() {
 }
 
 
+void redraw() {
+	XClearWindow(dis, win);
+}
+
+
 // Main program
 int main(int argc, char *argv[])
 {
     const char* js_device;
     int js;
-    struct js_event event;
+    struct js_event jsevent;
     struct axis_state axes[3] = {};
     size_t axis;
 
@@ -190,32 +191,87 @@ int main(int argc, char *argv[])
     else
         js_device = "/dev/input/js0";
 
-    js = open(js_device, O_RDONLY);
+    js = open(js_device, O_RDONLY | O_NONBLOCK);
 
     if (js == -1) {
         perror("Could not open joystick");
         return -1;
     }
 
+	XEvent event;		/* the XEvent declaration !!! */
+	KeySym key;		/* a dealie-bob to handle KeyPress Events */	
+	char text[255];		/* a char buffer for KeyPress Events */
 
+	init_x();
 
-    /* This loop will exit if the controller is unplugged. */
-    while (read_event(js, &event) == 0)
-    {
-        switch (event.type)
-        {
-            case JS_EVENT_BUTTON:
-                printf("Button %u %s\n", event.number, event.value ? "pressed" : "released");
-                break;
-            case JS_EVENT_AXIS:
-                axis = get_axis_state(&event, axes);
-                if (axis < 3)
-                    printf("Axis %zu at (%6d, %6d)\n", axis, axes[axis].x, axes[axis].y);
-                break;
-            default:
-                /* Ignore init events. */
-                break;
+	/* look for events forever... */
+	while(1) {		
+		// Process pending events:
+        while (XPending(dis) > 0) {
+            /* get the next event and stuff it into our event variable.
+            Note:  only events we set the mask for are detected!
+            */
+            XNextEvent(dis, &event);
+            printf("1\n");
+        //continue;
+
+            if (event.type==Expose && event.xexpose.count==0) {
+            /* the window was exposed redraw it! */
+                redraw();
+            }
+            if (event.type==KeyPress&&
+                XLookupString(&event.xkey,text,255,&key,0)==1) {
+                /* use the XLookupString routine to convert the invent
+                KeyPress data into regular text.  Weird but necessary...
+                */
+
+                if (text[0]=='c') {
+                    XSetForeground(dis,gc,white);
+                    XFillRectangle(dis,win,gc, 0, 0, -1, -1);
+                }
+                else if (text[0]=='v') {
+                    XSetForeground(dis,gc,black);
+                    XFillRectangle(dis,win,gc, 0, 0, -1, -1);
+                }
+                else if (text[0]=='q') {
+                    close_x();
+                }
+                printf("You pressed the %c key!\n",text[0]);
+            }
+            if (event.type==ButtonPress) {
+            /* tell where the mouse Button was Pressed */
+                int x=event.xbutton.x,
+                    y=event.xbutton.y;
+
+                strcpy(text,"X is FUN!");
+                XSetForeground(dis,gc,rand()%event.xbutton.x%255);
+                XDrawString(dis,win,gc,x,y, text, strlen(text));
+            }
         }
+
+
+        /* This loop will exit if the controller is unplugged. */
+        if(read_event(js, &jsevent) != -1)
+        {
+            switch (jsevent.type)
+            {
+                case JS_EVENT_BUTTON:
+                    printf("Button %u %s\n", jsevent.number, jsevent.value ? "pressed" : "released");
+                    XSetForeground(dis, gc, jsevent.value ? white : black);
+                    XFillRectangle(dis, win, gc, 0, 0, -1, -1);
+                    break;
+                case JS_EVENT_AXIS:
+                    axis = get_axis_state(&jsevent, axes);
+                    if (axis < 3)
+                        printf("Axis %zu at (%6d, %6d)\n", axis, axes[axis].x, axes[axis].y);
+                    break;
+                default:
+                    /* Ignore init events. */
+                    break;
+            }
+        }
+
+        printf("2\n");
     }
 
     close(js);
