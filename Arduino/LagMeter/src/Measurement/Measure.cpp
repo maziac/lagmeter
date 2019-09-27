@@ -335,11 +335,12 @@ L_ERROR:
 // Waits until the SVGA value gets into range, then measures the time until the photo
 // sensor gets into range.
 // Used to measure the delay of the monitor.
-// @param range The range for the photo sensor.
-// @param rangeWait The range for the SVGA value.
+// @param threshold The value to compare the inputPin value to.
+// @param positiveThreshold If true check that inputPin value is bigger, if false check that inputPin value is smaller.
+// @param threshold The value to to wait for (SVGA).
 // @return the time.
-int measureLagDiff(int threshold, int thresholdWait) {
-  return measureLag(IN_PIN_PHOTO_SENSOR, threshold, false, IN_PIN_SVGA, thresholdWait);
+int measureLagDiff(int threshold, bool positiveThreshold, int thresholdWait) {
+  return measureLag(IN_PIN_PHOTO_SENSOR, threshold, positiveThreshold, IN_PIN_SVGA, thresholdWait);
 }
 
 
@@ -392,6 +393,7 @@ void measurePhotoSensor() {
   
   // Calculate threshold in the middle (buttonOffLight value is bigger than buttonOnLight value)
   int threshold = (buttonOnLight.max + buttonOffLight.min)/2;
+  bool positiveThreshold = (buttonOnLight.max > buttonOffLight.max);
 
   // Print
   lcd.clear();
@@ -413,7 +415,7 @@ void measurePhotoSensor() {
     lcd.print(F(": "));
     
     // Wait until input (photo sensor) changes
-    int time = measureLag(IN_PIN_PHOTO_SENSOR, threshold, false);
+    int time = measureLag(IN_PIN_PHOTO_SENSOR, threshold, positiveThreshold);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
@@ -422,7 +424,7 @@ void measurePhotoSensor() {
     // Wait a random time to make sure we really get different results.
     int waitRnd = random(70, 150);
     // Wait until input (photo sensor) changes
-    waitMsInput(IN_PIN_PHOTO_SENSOR, threshold, true, waitRnd);
+    waitMsInput(IN_PIN_PHOTO_SENSOR, threshold, !positiveThreshold, waitRnd);
     if(isAbort()) return;
 
     // Calculate max/min.
@@ -506,7 +508,8 @@ void measureSVGA() {
   
   // Calculate threshold in the middle 
   int threshold = (buttonOnSVGA.max+buttonOffSVGA.max)/2;
-  
+  bool positiveThreshold = (buttonOnSVGA.max > buttonOffSVGA.max);
+
   // Print
   lcd.clear();
   lcd.print(F("Start testing..."));
@@ -527,7 +530,7 @@ void measureSVGA() {
     lcd.print(F(": "));
     
     // Wait until input (svga) changes
-    int time = measureLag(IN_PIN_SVGA, threshold, true);
+    int time = measureLag(IN_PIN_SVGA, threshold, positiveThreshold);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
@@ -536,7 +539,7 @@ void measureSVGA() {
     // Wait a random time to make sure we really get different results.
     int waitRnd = random(70, 150);
     // Wait until input (svga) changes
-    waitMsInput(IN_PIN_SVGA, threshold, false, waitRnd);
+    waitMsInput(IN_PIN_SVGA, threshold, !positiveThreshold, waitRnd);
     if(isAbort()) return;
 
     // Calculate max/min.
@@ -661,10 +664,11 @@ void measureSvgaToMonitor() {
   
   // Calculate threshold in the middle (buttonOffLight value is bigger than buttonOnLight value)
   int threshold = (buttonOnLight.max + buttonOffLight.min)/2;
+  bool positiveThreshold = (buttonOnLight.max > buttonOffLight.max);
 
   // Calculate threshold in the middle 
   int thresholdWait = (buttonOnSVGA.max+buttonOffSVGA.max)/2;
-  
+
   // Print
   lcd.clear();
   lcd.print(F("Start testing..."));
@@ -685,7 +689,7 @@ void measureSvgaToMonitor() {
     lcd.print(F(": "));
     
     // Wait until input (photo sensor) changes
-    int time = measureLagDiff(threshold, thresholdWait);
+    int time = measureLagDiff(threshold, positiveThreshold, thresholdWait);
     if(isAbort()) return;
     // Output result: 
     lcd.print(time);
@@ -694,7 +698,7 @@ void measureSvgaToMonitor() {
      // Wait a random time to make sure we really get different results.
     int waitRnd = random(70, 150);
     // Wait until input (photo sensor) changes
-    waitMsInput(IN_PIN_PHOTO_SENSOR, threshold, true, waitRnd);
+    waitMsInput(IN_PIN_PHOTO_SENSOR, threshold, !positiveThreshold, waitRnd);
     if(isAbort()) return;
 
     // Calculate max/min.
@@ -785,6 +789,7 @@ int checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool 
   TCNT1 = tcnt1ValueOff;
   TIFR1 = 1<<TOV1;  // Clear pending bits
   TIFR2 = 1<<TOV2;  // Clear pending bits
+
   // Simulate joystick button
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
 
@@ -809,10 +814,11 @@ int checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool 
 
     // Check if key pressed
     key = analogRead(0);
-    //Check if something is pressed
+    // Check if something is pressed
     if (key < LCD_KEY_PRESS_THRESHOLD) {
       // key pressed -> abort
       keyPressed = true;
+      break;
     }
 
     // Check for time out
@@ -850,13 +856,14 @@ int checkReactionWithPressTime(int inputPin, int pressTime, int threshold, bool 
   else if(accuracyOvrflw) {    // Assure that measurement accuracy is good enough
     // Error
     Error(nullptr, F(CHECK_ACCURACY_ERROR_STR));
+    return -1;
   }
   else if(counterOvrflw) {
     return -1;
   }
 
   // Calculate time from counter value.
-  long tcount1l = tcount1 - tcnt1ValueTooLong;
+  long tcount1l = tcount1 - ((switchOff) ? tcnt1ValueOff : tcnt1ValueTooLong);
   tcount1l *= 64*adjust;
   tcount1l = (tcount1l+500l) / 1000l; // with rounding
 
@@ -996,8 +1003,8 @@ void measureMinPressTime() {
   waitMs(1000); if(isAbort()) return;
   lcd.clear();
 
-  // Measure: Start with 15ms
-  int pressTime = 15;
+  // Measure: Start with 1ms
+  int pressTime = 1;
   unsigned long startTime;
   unsigned long offsetTime;
   char s[9+1];
@@ -1008,12 +1015,39 @@ void measureMinPressTime() {
     // Print
     lcd.setCursor(0,0);
     lcd.print(pressTime);
-    lcd.print(F("ms:"));    
+    lcd.print(F("ms:    "));    
   
     // Start measurement
     offsetTime = 0;
     startTime = millis();
     unsigned long cycle = 0;
+  
+    // Make sure that there is no signal
+    digitalWrite(OUT_PIN_BUTTON, LOW);
+    while(true) {
+      // Check range of input pin
+      int value = analogRead(pin);
+      // Check for threshold
+      if(!((useSVGA && value > threshold) // Check if value is bigger
+        || (!useSVGA && value < threshold))) // Check if value is smaller
+        break;  // Leave loop
+      // Check for keypress
+      int key = analogRead(0);
+      if (key < LCD_KEY_PRESS_THRESHOLD) {
+        pressDiff = checkKeyToChangePressTime();
+        if(pressDiff == 0) {
+          // Other key pressed
+          abortAll = true;
+          return;
+        }
+        // Change press time (in ms)
+        pressTime += pressDiff;
+        if(pressTime < 1)
+          pressTime = 1;
+        break;
+      }
+    }
+
     while(true) {
       cycle ++;
       if(cycle == 0) {
@@ -1038,19 +1072,9 @@ void measureMinPressTime() {
         break;
       }
 
-      // Calculate time 
-      offsetTime += time;
-      totalTime = millis() - startTime + offsetTime;
-      totalTime /= 1000l;  // in secs
-      
-      // Print count and time, e.g. "4k 1h"
-      snprintf(s, sizeof(s), "%s, %s", longToString(cycle), secsToString(totalTime));
-      lcd.setCursor(6,0);
-      lcd.print(s);  
-      lcd.print(F("    "));
-
       // Wait a random time to make sure we really get different results.
-      int waitRnd = random(30, 80);
+      int waitRnd = random(40, 150);
+   // waitRnd = random(1*1000, 3*1000);
       // Wait until input changes
       int key = waitMsInput(IN_PIN_SVGA, threshold, !useSVGA, waitRnd);
       // Check for keypress
@@ -1065,6 +1089,17 @@ void measureMinPressTime() {
       }
       if(abortAll)
         return;
+
+      // Calculate time 
+      offsetTime += time;
+      totalTime = millis() - startTime + offsetTime;
+      totalTime /= 1000l;  // in secs
+      
+      // Print count and time, e.g. "4k 1h"
+      snprintf(s, sizeof(s), "%s, %s", longToString(cycle), secsToString(totalTime));
+      lcd.setCursor(6,0);
+      lcd.print(s);  
+      lcd.print(F("    "));
     }
 
     // Print to serial
