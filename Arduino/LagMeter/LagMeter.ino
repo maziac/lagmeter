@@ -37,7 +37,7 @@ However it was tested only with a 16MHz CPU.
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "0.14"
+#define SW_VERSION "0.15"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
@@ -559,7 +559,7 @@ void handleUsblag() {
       xbox.overrideInterval = 8;
       // Inform user
       lcd.clear();
-      lcd.println(F("8ms poll..."));
+      lcd.print(F("8ms poll..."));
       // Wait for potential lag time
       waitMs(1000); 
       lcd.clear();

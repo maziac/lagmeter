@@ -36,6 +36,9 @@ const int KEY_MEASURE_MIN_DOWN10 = LCD_KEY_LEFT;
 #define CHECK_ACCURACY  1
 #define CHECK_ACCURACY_ERROR_STR "Err:Accuracy>1ms"
 
+// Time to show the title of each test.
+#define TITLE_TIME  1500    // in ms
+
 
 // Initializes the pins.
 void setupMeasurement() {
@@ -56,8 +59,16 @@ void setupMeasurement() {
 // The photo sensor input is read and printed to the LCD.
 // Press "KEY_TEST" to leave.
 void testPhotoSensor() {
+  // Show test title
   lcd.clear();
-  lcd.print(F("Button:"));
+  lcd.print(F("Button ON/OFF,"));
+  lcd.setCursor(0,1);
+  lcd.print(F("Meas. Photos."));
+  waitMs(TITLE_TIME); if(isAbort()) return;
+
+  // Start
+  lcd.clear();
+  lcd.println(F("Button:"));
   lcd.setCursor(0,1);
   lcd.print(F("Sensor:"));
   int outpValue = LOW;
@@ -355,6 +366,13 @@ int measureLagDiff(int threshold, bool positiveThreshold, int thresholdWait) {
 //   Simulate joystick button press -> measure time until photo
 //   sensor value changes.
 void measurePhotoSensor() {
+  // Show test title
+  lcd.clear();
+  lcd.print(F("Test: Button ->"));
+  lcd.setCursor(0,1);
+  lcd.print(F("-> Photosensor"));
+  waitMs(TITLE_TIME); if(isAbort()) return;
+
   // Calibrate
   lcd.clear();
   lcd.print(F("Calib. Photo S."));
@@ -468,9 +486,16 @@ void measurePhotoSensor() {
 // Measurement:
 //   Simulate joystick button press -> measure time until svga value changes
 void measureSVGA() {
+  // Show test title
+  lcd.clear();
+  lcd.print(F("Test: Button ->"));
+  lcd.setCursor(0,1);
+  lcd.print(F("-> AD2 (eg.SVGA)"));
+  waitMs(TITLE_TIME); if(isAbort()) return;
+
   // Calibrate
   lcd.clear();
-  lcd.print(F("Calibrate SVGA"));
+  lcd.print(F("Calibrate AD2"));
   // Simulate joystick button press
   digitalWrite(OUT_PIN_BUTTON, HIGH); 
   waitMs(500); if(isAbort()) return;
@@ -588,6 +613,13 @@ void measureSVGA() {
 //   Simulate joystick button press -> measure time when svga value changes
 //   to time when photo sensor changes.
 void measureSvgaToMonitor() {
+  // Show test title
+  lcd.clear();
+  lcd.print(F("Test: SVGA ->"));
+  lcd.setCursor(0,1);
+  lcd.print(F("-> Photosensor"));
+  waitMs(TITLE_TIME); if(isAbort()) return;
+
   // Calibrate
   lcd.clear();
   lcd.print(F("Calibrate SVGA"));
@@ -911,6 +943,13 @@ int checkKeyToChangePressTime(int key = LCD_KEY_NONE) {
 // found. For convenience the user needs to conenct only one of both.
 // If no signal is found for 300ms the test has failed.
 void measureMinPressTime() {
+  // Show test title
+  lcd.clear();
+  lcd.print(F("Test: Minimum"));
+  lcd.setCursor(0,1);
+  lcd.print(F("Button Press"));
+  waitMs(TITLE_TIME); if(isAbort()) return;
+  
   // Calibrate
   lcd.clear();
   lcd.print(F("Calibrate SVGA"));
@@ -1004,7 +1043,7 @@ void measureMinPressTime() {
   lcd.clear();
 
   // Measure: Start with 1ms
-  int pressTime = 1;
+  int pressTime = 1; //15;
   unsigned long startTime;
   unsigned long offsetTime;
   char s[9+1];
@@ -1128,5 +1167,3 @@ void measureMinPressTime() {
   }
 }
 
-
- 

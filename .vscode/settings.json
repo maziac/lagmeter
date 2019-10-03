@@ -20,6 +20,10 @@
         "__node_handle": "cpp",
         "optional": "cpp",
         "locale": "cpp",
-        "system_error": "cpp"
+        "system_error": "cpp",
+        "__hash_table": "cpp",
+        "__split_buffer": "cpp",
+        "string": "cpp",
+        "unordered_map": "cpp"
     }
 }
