@@ -445,7 +445,7 @@ So the test setup could be used to test also other Joysticks.
 Setup:
 1. The 'FastestJoystick' is conencted via USB to the NUC (linux) system. It is used tp outut a signal.
 2. The USB-Joystick-under-test is connected to the NUC (linux) system.
-3. The 'InputOutput' program is started
+3. The 'inout' (InputOutput) program is started
 4. It will output a digital signal for each button press
 
 With the LagMeter and the digital output connected to the SVGA input (SVGA input is just an analog input) we measure the minimum response time.
@@ -455,12 +455,63 @@ With the LagMeter and the digital output connected to the SVGA input (SVGA input
 Constant value of 2ms for more than a day or a million button clicks.
 (1457671 button presses, 105240 secs).
 
+Repeated delay measuremens (100 cycles): 3-5ms. 
+(Quite independent of system load. Same times measured also with attract-mode and mame running at the same time in the foreground).
 
 ## Buffalo
 
 Stopped after 10 mins:
 9ms for 10min, 5000 cycles.
 
+Delay measurement (100 cycles): 1-9 ms
+
+Note: My buffalo controller (as many others) has a ghosting problem. 
+The left button is "pressed" quite often (5x in 10mins), the right button about 1x in 10mins.
+
+
+
+## DragonRise Inc. Generic USB joystick, Zero Delay (Yellow PCB)
+
+Stopped after 3 mins:
+22ms for 3 min, 5000 cycles.
+
+Delay measurement (100 cycles): 2-31 ms
+
+
+## Microntek USB Joystick (Green PCB)
+
+Stopped after 4 mins:
+42ms for 4 min, 1000 cycles.
+
+Note: this might also have something to do with the polling of the USB host. With evhz I was not able to measure it at all.
+
+Delay measurement (100 cycles): 4-47 ms
+
+
+## Ultimarc Ultrastik 360
+
+Stopped after 8 mins:
+9ms for 8 min, 4000 cycles.
+
+Delay measurement (100 cycles): 8-17 ms
+
+Note: The Ultrastik 360 is an analog joystick. Potentially the AD conversion will be a little bit slower than just a button press.
+I had no possibility to measure it, but I don't expect that there is a significant additional delay.
+
+
+
+## Microsoft X-Box 360 pad (white)
+
+Stopped after 3 mins:
+21ms for 3 min, 1000 cycles.
+
+
+## Microsoft X-Box 360 pad (black)
+
+Stopped after 5 mins:
+8ms for 5 min, 3000 cycles.
+
+Delay measurement (100 cycles): 4-14 ms
 
 
 # Intermediate Results
@@ -478,6 +529,7 @@ With my measurements I chose a position always at the top.
 	Measured 3-5ms.	
   This means: There is almost no overhead for the OS. Input delay is [0.2;1.2]ms. Output delay is [0;1]ms. Total [0.2;2.2]. The variation is exactly 2ms. So the OS delay is only ca. 3ms.
   This even does not change if in parallel an emulator is running or started.
+  Even with 100% cpu load for both cpus (program 'stress' was used) this did not change.
 
 - The delay of the Eizo itself is 38ms (DDVI) and 30ms (SVGA). The BenQ has 12-13ms no matter what input.
 - Eizo SVGA input is faster than EIZO DVI input by 8ms. DVI = 38ms, SVGA = 30ms. The delay is very constant. But this means 1.5 frames delay which is far too big. This monitor needs to be exchanged. 
