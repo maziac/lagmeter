@@ -8,6 +8,7 @@
 The goal of this project is to build a HW/SW that allows for easy measurement of input (output) lag.
 
 The tested setup in my case is a self-made aracde cabinet which is based on a debian/Linux and an Intel NUC HW. But the LagMeter can also be used for other PC-like or even console-like setups.
+The results of the measurements can be found [here](Docs/LagMeasurements.md).
 
 The LagMeter will stimulate a button on a controller and measure the time it takes until a reaction occurs on the monitor.
 Apart from the LagMeter itself some SW is required on the tested system that changes the color or brightness of a (small) area on the screen depending on the state of the input device (the button press).
@@ -60,6 +61,8 @@ There are at least:
 Note: Of course you could increase the frame rate to lower the interval/lower the latency. The problem is that if you use another frame rate than the source (i.e. the emulator) you may encounter other visual artefacts.
 
 The picture below tries to visualize the effect of the polling:
+![](Images/wavedrom_polling_1.jpg)
+<!--
 ~~~wavedrom
 {signal: [
   
@@ -106,6 +109,8 @@ edge:[
 
 }
 ~~~
+-->
+
 Relais is the simulated button press. When it's pressed the game controller notices after a few ms depending of the firmware.
 This value is not directly provided to the OS. Instead the USB host controller (of the PC) polls at 8ms (default, 125Hz).
 The OS receives the value and provides it to the application after some delay. This delay should be short but is not necessarily fixed, i.e. depending on the current load of the CPU it might vary.
@@ -118,7 +123,8 @@ I.e. already with these small value we end up with a jitter of 5ms to 43ms for a
 But that is just the path to the emulator game controller input.
 
 The full path needs to draw and display something on the monitor:
-
+![](Images/wavedrom_polling_1.jpg)
+<!--
 ~~~wavedrom
 {signal: [
   
@@ -159,6 +165,8 @@ edge:[
  ],
 }
 ~~~
+-->
+
 The emulator needs at least one frame to calculate the next frame depending on the game controller's input (button press).
 (This is quite optimistic, often, depending on the emulated game, the emulator needs more frames. Then depending on the emulator's settings it might need additional frames, e.g. for triple buffering or for post processing of the screen output.)
 
@@ -236,7 +244,7 @@ Note: You don't need to wire the LCD and buttons if you use the LCD Keypad shiel
 ## Arduino SW
 
 There are 2 main functionalities implemented:
-- The "LagMeter" which stimulated a game controller button and measures the time until a visual response is seen on the monitor.
+- The "LagMeter" which stimulates a game controller button and measures the time until a response (visual response on the monitor, the SVGA signal or another output).
 - The "UsblagLcd" which directly measures the lag of a USB game controller by stimulating a button and measuring the response through the USB protocol. This part is derived from the [usblag](https://gitlab.com/loic.petit/usblag) project. It adds an UI via an LCD display.
 
 
@@ -341,231 +349,6 @@ Here is the result for 100 test cycles:
 
 
 
-
-# System under Test - Setup
-
-## HW
-
-- NUC:	Intel NUC-Kit N3050 1.6GHz HD Graphics NUC5CPYH
-- BenQ:	BenQ GW2760HS 68,5 cm (27 Zoll) Monitor (DVID, HDMI, 4ms Reaktionszeit, 16:9 Full HD). DVI/HDMI connected.
-- EIZO:	Flachbildschirm 1600 x 1200 8-16ms - Eizo FlexScan S2100 21 Zoll HD Display Monitor
-- EIZO-SVGA:	EIZO with SVGA signal connected
-- EIZO-DVI:	EIZO with DVI signal connected
-- Button:	Zero Delay USB Encoder, Dragon Rise Inc.
-
-### Monitors:
-
-I tried two different monitors.
-
-
-#### BenQ GW2760HS 27" Monitor - 16:9, Full HD
-
-See https://www.tftcentral.co.uk/reviews/benq_gw2760hs.htm
-
-- Connectors for SVGA, DVI, HMI.
-- Response time: 4ms
-
-Settings:
-- AMA: Advanced Motion Accelarator. Possible selections: OFF, HIGH, Premium. Was HIGH.
-- PictureMode was 'Standard'. There is a 'Game' mode but I'm not sure if this is really about image processing, if set the image gets brighter.
-It has no influence on lag. Same lag if 'Standard' or 'Game'.
-
-
-#### Eizo FlexScan S2100 21" HD Display Monitor - 4:3, 1600x1200 8-16ms
-
-- PVA screen
-- Connectors for SVGA, DVI.
-- Response time 8-16ms: http://www.webdatenblatt.de/cds/de/?pid=fa6b7ba81603252
-    - On/Off Response Time: 16ms
-    - Average Midtone Response Time: 8ms 
-- This monitor is so old it has no settings that could influence the lag.
-
-
-### USB Encoders (game controller)
-
-Here are the tested devices together with their default polling rates.
-- Buffalo Gampad: 10ms
-- DragonRise, ZeroDelay USB Encoder: 10ms
-- Ultimarc U360 Stik: 10ms
-- FastestJoystick (TeensyLC): 1ms
-
-
-## SW
-
-- Linux:	Kernel 4.15.0, Ubuntu 16.04.1
-- Windows:	Windows 10
-- MAME:	v0.155
-- Jstest	Jstest-gtk. Joystick tester v0.1.0
-
-
-## Linux USB polling rates
-
-Default polling rates:
-- Ultimarc: 10ms, Spd=12
-- Gamepad (2nd player): 10ms, Spd=1.5
-- DragonRise: 10ms, Spd=1.5 (This is the USB controller I used for testing/Button)
-- Mouse/Keyboard: 10ms, Spd=12
-
-It was not possible in this setup to reduce polling times.
-Nor for mouse nor for other devices.
-Options 'mspoll' or 'jspoll' did change the
-/sys/module/usbhid/parameters/mousepoll (or jspoll)
-but still I got 125 Hz by testing with the [evhz](https://gitlab.com/iankelling/evhz) program.
-
-I have tried:
-- Setting options usbhid mousepoll=1 (jspoll=1) in /etc/modprobe.d/usbhid
-- Setting usbhid.mousepoll=8 on the command line while booting
-- Running sudo modprobe -r usbhid && sudo modprobe usbhid mousepoll=1 (or jspoll=1) from the command line
-
-Problem exactly like [here](https://askubuntu.com/questions/624075/how-do-i-set-the-usb-polling-rate-correctly-for-my-logitech-mouse).
-
-'evhz' results:
-- Ultimarc: 90Hz
-- Gamepad (2nd player): 34 Hz
-- DragonRise: 115Hz
-
-
-Note: when using the teensy as joystick with a requested poll interval of 1ms the Linux is using the 1ms poll interval. Also evhz is showing 1000Hz (but it's important to use the joystick coordinated, e.g. Joystick.X(analogRead(0)), otherwise evhz will not find any event.)
-
-USB requested poll rate:
-- Buffalo: 10ms
-- TeensyLC: 1ms
-- DragonRise: 10ms
-- Ultimarc: 10ms
-
-
-
-# Tests
-
-# Joystick turnaround time
-
-With FastestJoystick it could be seen that the OS response time is a 1ms.
-So the test setup could be used to test also other Joysticks.
-
-Setup:
-1. The 'FastestJoystick' is conencted via USB to the NUC (linux) system. It is used tp outut a signal.
-2. The USB-Joystick-under-test is connected to the NUC (linux) system.
-3. The 'inout' (InputOutput) program is started
-4. It will output a digital signal for each button press
-
-With the LagMeter and the digital output connected to the SVGA input (SVGA input is just an analog input) we measure the minimum response time.
-
-## FastestJoystick (Teensy)
-
-Constant value of 2ms for more than a day or a million button clicks.
-(1457671 button presses, 105240 secs).
-
-Repeated delay measuremens (100 cycles): 3-5ms. 
-(Quite independent of system load. Same times measured also with attract-mode and mame running at the same time in the foreground).
-
-## Buffalo
-
-Stopped after 10 mins:
-9ms for 10min, 5000 cycles.
-
-Delay measurement (100 cycles): 1-9 ms
-
-Note: My buffalo controller (as many others) has a ghosting problem. 
-The left button is "pressed" quite often (5x in 10mins), the right button about 1x in 10mins.
-
-
-
-## DragonRise Inc. Generic USB joystick, Zero Delay (Yellow PCB)
-
-Stopped after 3 mins:
-22ms for 3 min, 5000 cycles.
-
-Delay measurement (100 cycles): 2-31 ms
-
-
-## Microntek USB Joystick (Green PCB)
-
-Stopped after 4 mins:
-42ms for 4 min, 1000 cycles.
-
-Note: this might also have something to do with the polling of the USB host. With evhz I was not able to measure it at all.
-
-Delay measurement (100 cycles): 4-47 ms
-
-
-## Ultimarc Ultrastik 360
-
-Stopped after 8 mins:
-9ms for 8 min, 4000 cycles.
-
-Delay measurement (100 cycles): 8-17 ms
-
-Note: The Ultrastik 360 is an analog joystick. Potentially the AD conversion will be a little bit slower than just a button press.
-I had no possibility to measure it, but I don't expect that there is a significant additional delay.
-
-
-
-## Microsoft X-Box 360 pad (white)
-
-Stopped after 3 mins:
-21ms for 3 min, 1000 cycles.
-
-
-## Microsoft X-Box 360 pad (black)
-
-Stopped after 5 mins:
-8ms for 5 min, 3000 cycles.
-
-Delay measurement (100 cycles): 4-14 ms
-
-
-# Intermediate Results
-
-(Mainly notes to myself)
-
-- Monitor delay dependend on position:
-With BenQ: If the photosensor is positioned at the top the delay is 11ms (to SVGA).
-If it is positioned at the bottom the delay is 20ms (toSVGA). 
-But this can be explained: the SVGA already start to measure with the first while line, i.e. the top line.
-With my measurements I chose a position always at the top.
-
-- Tests with 'inout' running on NUC and FastestJoytick:
-	Turnaround time. Lag from inout (Joystick button) to output (DOUT). While running ‚inout‘ program on PC (linux).	
-	Measured 3-5ms.	
-  This means: There is almost no overhead for the OS. Input delay is [0.2;1.2]ms. Output delay is [0;1]ms. Total [0.2;2.2]. The variation is exactly 2ms. So the OS delay is only ca. 3ms.
-  This even does not change if in parallel an emulator is running or started.
-  Even with 100% cpu load for both cpus (program 'stress' was used) this did not change.
-
-- The delay of the Eizo itself is 38ms (DDVI) and 30ms (SVGA). The BenQ has 12-13ms no matter what input.
-- Eizo SVGA input is faster than EIZO DVI input by 8ms. DVI = 38ms, SVGA = 30ms. The delay is very constant. But this means 1.5 frames delay which is far too big. This monitor needs to be exchanged. 
-- NUC video output: There is no difference in lag for the HDMI and the SVGA output.
-
-- The vertical screen position (not the horizontal) matters for the lag measurement. 
-The more the photo sensor is positioned to the bottom the bigger the values. From middle to bottom this is approx. 7ms for the minimum.
-This correlates quite good with 20ms for a full screen (half = 10, approx 7).
-- BenQ is approx. 30ms faster than EIZO-DVI (minimum).
-- EIZO-SVGA is approx. 8ms faster than EIZO-DVI (minimum).
-=> Could be that SVGA output is 8ms faster than HDMI output from the NUC. Then, if BenQ would have an SVGA input a lag of 30ms (minimum could be achievable).
-- BenQ-SVGA and BenQ-DVI are exactly the same speed. So it seems that NUC HDMI and SVGA is the same speed, but EIZO has a bigger input lag on DVI.
-- windowed vs. fullscreen: There seems to be no difference. EIZO could be a few ms faster in wondowed mode. BenQ could be a few ms faster in fullscreen mode. So I guess the deviation is only by chance.
-- The (mameau) CRT geometry shader in MAME add 10-14 ms to the overall lag.
-- From the usblag measurements: 
-    - The Buffalo game controller has only 1ms internal lag. It's the fastest I measured.
-- The ZeroDelay controller has around 10 ms. (Compared total lag with that when Buffalo game controller was used.)
-- With exchanging the monitor and the game controller I can get down to a response time of 45-79ms (with MAME). If I manage to get the linux usb polling time down to 1ms I will gain another 8ms so this would result in: 37-71ms. This is less than half the original response time (!)
-
-- If I test against the inverted range the results are a few ms better: 4 ms for BenQ and 10-20ms for Eizo. So this setting is better for comparison with a camera to check the lag until something happens on the monitor.
-However, this does not mean that the monitor is showning the area in full brightness yet. For this the measurement against the non-inverted range might be more correct/more meaningful.
-
-- The EIZO seems to have a high variance also depending on the brightness: 
-If full brightness is used as with the ZXLagTest program the lag times are lower.
-For the BenQ w???
-
-- SVGA results:
-    - BenQ introduces a lag of 9-12ms
-    - EIZO introduces a lag of 9-12ms
-    
-- SVGA out vs. HDMI out: The SVGA output is about 10ms slower than HDMI.
-
-See [spreadsheet](Docs/LagMeasurements.ods).
-
-
-(Goal: 70ms lag would be nice)
 
 
 # References
