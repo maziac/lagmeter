@@ -11,7 +11,7 @@ struct MinMax {
 void setupMeasurement();
 void testPhotoSensor();
 void measurePhotoSensor();
-void measureSVGA();
+void measureAD2();
 void measureSvgaToMonitor();
 void measureMinPressTime();
 

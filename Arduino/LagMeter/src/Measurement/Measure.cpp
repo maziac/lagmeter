@@ -477,15 +477,17 @@ void measurePhotoSensor() {
 
 
 
-// Calibrates on the SVGA output and measure the
+// Calibrates the AD2  (SVGA) input and measures the
 // input lag for a few cycles.
-// Uses the blue-output of SVGA (but you could also use red or green).
+// This is normally used for the SVGA input but can alos be tied to other outputs
+// like the Teensy digital out from the FastestJoystick project).
+// For SVGA: Uses the blue-output of SVGA (but you could also use red or green).
 // Calibration: 
 //   Simulate joystick button press -> measure svga brightness, i.e. max signal.
 //   Simulate joystick button unpress -> measure svga darkness, i.e. max signal.
 // Measurement:
 //   Simulate joystick button press -> measure time until svga value changes
-void measureSVGA() {
+void measureAD2() {
   // Show test title
   lcd.clear();
   lcd.print(F("Test: Button ->"));

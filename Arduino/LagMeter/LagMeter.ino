@@ -454,7 +454,7 @@ void handleLagMeter() {
       measurePhotoSensor();
       break;
     case KEY_MEASURE_SVGA:
-      measureSVGA();
+      measureAD2();
       break;
     case KEY_MEASURE_SVGA_TO_PHOTO:
       measureSvgaToMonitor();
