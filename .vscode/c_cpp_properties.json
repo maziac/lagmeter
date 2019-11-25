@@ -4,10 +4,13 @@
             "name": "Mac",
             "includePath": [
                 "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/tools/**",
-                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/**"
+                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/**",
+                "/Users/bob/Library/Arduino15/packages/arduino/hardware/avr/1.8.1/**",
+                "/Users/bob/Library/Arduino15/packages/arduino/tools/**"
             ],
             "forcedInclude": [
-                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h"
+                "/Volumes/SDDPCIE2TB/Applications/Arduino.app/Contents/Java/hardware/arduino/avr/cores/arduino/Arduino.h",
+                "/Users/bob/Library/Arduino15/packages/arduino/hardware/avr/1.8.1/cores/arduino/Arduino.h"
             ],
             "macFrameworkPath": [
                 "/System/Library/Frameworks",
