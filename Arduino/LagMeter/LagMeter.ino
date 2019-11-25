@@ -33,14 +33,31 @@ so that the correct time should be displayed.
 However it was tested only with a 16MHz CPU.
 */
 
+
+#include <usbhid.h>
+#include <hiduniversal.h>
+#include <usbhub.h>
+
+//#include "hidjoystickrptparser.h"
+
+
 #include "src/Measurement/Utilities.h"
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "0.15"
+#define SW_VERSION "0.20"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
+
+
+
+// USB--------------------------------------
+USB Usb;
+USBHub Hub(&Usb);
+byte button = 0;
+unsigned long time;
+// -----------------------------------------
 
 
 // Define used Keys.
@@ -165,219 +182,7 @@ void printUsbLag(float measuredTime) {
 }
 
 
-#include "src/usblag/HIDDriver.h"
-#include "src/usblag/XInputDriver.h"
-#include <BTHID.h>
-#include "src/usblag/HIDReportMask.h"
-
-
-//#define BUTTON_PIN 8
-
-#define ENABLE_BT 0
-#define NAME_RETRIEVAL 1
-
-#include "src/usblag/desc.h"
-
-unsigned long nextchange;
-unsigned long time;
-int total = 5000;
-byte state = 0;
-byte button = 0;
-USB Usb;
-HIDReportMask report_mask;
-
-#define BUFFER_SIZE 64
-
-#define PS4_VID         0x054C // Sony Corporation
-#define PS4_PID         0x05C4 // PS4 Controller
-#define PS4_PID_SLIM 0x09CC // PS4 Slim Controller
-
-uint8_t intervalPow2(uint8_t interval) {
-  if (interval <= 2) {
-    return interval;
-  }
-  if (interval < 4) {
-    return 2;
-  }
-  if (interval < 8) {
-    return 4;
-  }
-  if (interval < 16) {
-    return 8;
-  }
-  if (interval < 32) {
-    return 16;
-  }
-  return 32;
-}
-
-uint8_t pollBuffer[BUFFER_SIZE];
-uint8_t prevBuffer[BUFFER_SIZE];
-
-class TimingManager {
-  public:
-    EpInfo* pollingEP = 0;
-    uint8_t address = 0;
-    USB* usbRef;
-    uint8_t pollingInterval = 0;
-    uint32_t nextPollingTime = 0;
-    bool doPoll = false;
-    uint8_t overrideInterval = 0;
-    TimingManager(USB* usb): usbRef(usb) {}
-    bool doInit(uint8_t interval, uint8_t bAddress, EpInfo* ep) {
-      pollingInterval = interval;
-      pollingEP = ep;
-      doPoll = true;
-      overrideInterval = 0;
-      address = bAddress;
-      nextPollingTime = 0;
-      memset(prevBuffer, 0, BUFFER_SIZE);
-      Serial.print("Interval:\t\t");
-      Serial.print(interval);
-      Serial.println("ms");
-    }
-    bool canPoll() {
-      if (!doPoll || !pollingEP) return false;
-      // do burn
-      if (overrideInterval == 255) return true;
-      if((int32_t)((uint32_t)millis() - nextPollingTime) >= 0L) {
-        nextPollingTime = (uint32_t)millis() + (overrideInterval > 0 ? overrideInterval : pollingInterval);
-        return true;
-      }
-      return false;
-    }
-    uint8_t pollDevice(uint16_t VID, uint16_t PID) {
-      if (!canPoll()) return 0;
-      memset(pollBuffer, 0, BUFFER_SIZE);
-      uint16_t buffer_size = pollingEP->maxPktSize;
-      uint8_t res = usbRef->inTransfer(address, pollingEP->epAddr, &buffer_size, pollBuffer);
-      if (res != 0 && res != hrNAK) {
-        Serial.print("Cant poll device ");
-        Serial.print(res);
-        Serial.print("\n");
-        Error(F("USB Device:"), F("Can't poll!"));
-      }
-      if (res == hrNAK) { return 0; }
-      return doMeasure(VID, PID, pollingEP->maxPktSize, pollBuffer);
-    }
-    uint8_t doMeasure(uint16_t VID, uint16_t PID, uint8_t len, uint8_t *buf) {
-      report_mask.apply_mask(len, buf);
-      if (memcmp(buf, prevBuffer, len) != 0) {
-        float measuredTime = (micros()-time)/1000.0;  // in ms
-        printUsbLag(measuredTime);
-        Serial.println(measuredTime);
-        /*for (uint8_t i = 0 ; i < len; ++i) {
-          print_hex(buf[i], 8);
-        }
-        Serial.println();
-        */
-        memcpy(prevBuffer, buf, len);
-        time = 0;
-      }
-      return 0;
-    }
-};
-class BTController : public BTHID, public TimingManager {
-  public:
-    BTController(BTD *p, bool pair = false, const char *pin = "0000"): BTHID(p, pair, pin), TimingManager(NULL) {
-    }
-    virtual void OnInitBTHID() {
-      TimingManager::doInit(0, 0, NULL);
-      enable_sixaxis();
-      Serial.print("BTHID Controller initialized\n");
-      report_mask.do_mask = false;
-    }
-    virtual void ParseBTHIDData(uint8_t len, uint8_t *buf) {
-      doMeasure(PS4_VID, PS4_PID, 10, buf+2);
-    }
-    void enable_sixaxis() { // Command used to make the PS4 controller send out the entire output report
-            uint8_t buf[2];
-            buf[0] = 0x43; // HID BT Get_report (0x40) | Report Type (Feature 0x03)
-            buf[1] = 0x02; // Report ID
-
-            HID_Command(buf, 2);
-    };
-
-    void HID_Command(uint8_t *data, uint8_t nbytes) {
-            pBtd->L2CAP_Command(hci_handle, data, nbytes, control_scid[0], control_scid[1]);
-    };
-};
-
-class XBoxController : public XInputDriver, public TimingManager {
-  public:
-    uint8_t readBuf[EP_MAXPKTSIZE]; // General purpose buffer for input data
-    XBoxController(USB* usb): XInputDriver(usb), TimingManager(usb) {}
-    uint8_t Init(uint8_t parent, uint8_t port, bool lowspeed) {
-      uint8_t res = XInputDriver::Init(parent, port, lowspeed);
-      if (res) return res;
-      TimingManager::doInit(bInterval, bAddress, &epInfo[ XBOX_INPUT_PIPE ]);
-      if (isXboxOne) {
-        Serial.print("XBOX One Controller initialized\n");
-        
-        startDevice();
-        
-        //initRumble();
-      } else {
-        Serial.print("XBOX Controller initialized\n");
-      }
-      report_mask.do_mask = false;
-      usblagMode = true;
-      requestedPollInterval = pollingInterval;
-      return 0;
-    }
-    uint8_t Release() {
-      XInputDriver::Release();
-      TimingManager::doPoll = false;
-      //usblagMode = false;
-      return 0;
-    }
-    uint8_t Poll() { return pollDevice(VID, PID); }
-};
-
-class HIDController : public HIDDriver, public TimingManager {
-  public:
-    uint8_t readBuf[EP_MAXPKTSIZE]; // General purpose buffer for input data
-    HIDController(USB* usb): HIDDriver(usb), TimingManager(usb) {}
-    uint8_t Init(uint8_t parent, uint8_t port, bool lowspeed) {
-      uint8_t res = HIDDriver::Init(parent, port, lowspeed);
-      if (res) return res;
-      TimingManager::doInit(pollInterval, bAddress, &epInfo[hidInterfaces[0].epIndex[epInterruptInIndex]]);
-      
-      if (GetReportDescr(0, &report_mask)) {
-        Serial.println("Cannot read HID report");
-      }
-      if (bNumIface > 1) {
-        Serial.println("Warning! Multi-channel HID device not supported! Selecting only the first one.");
-      }
-      Serial.print("HID Controller initialized\n");
-      usblagMode = true;
-      requestedPollInterval = pollingInterval;
-      return 0;
-    }
-    uint8_t Release() {
-      HIDDriver::Release();
-      TimingManager::doPoll = false;
-      //usblagMode = false;
-      return 0;
-    }
-    uint8_t Poll() { return pollDevice(VID, PID); }
-};
-
-HIDController Hid(&Usb);
-XBoxController xbox(&Usb);
-
-#if ENABLE_BT
-
-BTD Btd(&Usb); // You have to create the Bluetooth Dongle instance like so
-
-/* You can create the instance of the PS4BT class in two ways */
-// This will start an inquiry and then pair with the PS4 controller - you only have to do this once
-// You will need to hold down the PS and Share button at the same time, the PS4 controller will then start to blink rapidly indicating that it is in pairing mode
-BTController btHid(&Btd);
-
-#endif
-
-
+#if 01
 // SETUP
 void setup() {
 
@@ -408,8 +213,11 @@ void setup() {
     Serial.println("OSC did not start.");
     Error(F("Error:"), F("USB problem!!!"));
   }
+  delay(200);
 
-  nextchange = micros() + 5000*1000;
+  USBHIDInit();
+
+  //nextchange = micros() + 5000*1000;
 
 
 #if 0
@@ -434,6 +242,7 @@ void setup() {
   Serial.println(longToString(100000000l));
 #endif 
 }
+#endif
 
 
 // Checks for keypresses for LagMeter mode.
@@ -533,10 +342,10 @@ void handleUsblag() {
       digitalWrite(BUTTON_PIN, button);
       time = 0;
       Serial.print(F("Launching test"));
-      nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
+//      nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
       // Use USB polling interval of 1ms.
-      Hid.overrideInterval = 1;
-      xbox.overrideInterval = 1;
+     // Hid.overrideInterval = 1;
+     // xbox.overrideInterval = 1;
       // Inform user
       lcd.clear();
       lcd.print(F("1ms poll..."));
@@ -546,6 +355,7 @@ void handleUsblag() {
       lcd.clear();
       if(isAbort()) return;
       break;
+      
     case KEY_USBLAG_MEASURE_8MS:
       // Start testing usb device measurement
       button = false;
@@ -553,10 +363,10 @@ void handleUsblag() {
       digitalWrite(BUTTON_PIN, button);
       time = 0;
       Serial.print(F("Launching test"));
-      nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
+//      nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
       // Use USB polling interval of 8ms.
-      Hid.overrideInterval = 8;
-      xbox.overrideInterval = 8;
+     // Hid.overrideInterval = 8;
+     // xbox.overrideInterval = 8;
       // Inform user
       lcd.clear();
       lcd.print(F("8ms poll..."));
@@ -566,7 +376,8 @@ void handleUsblag() {
       if(isAbort()) return;
       break;
   }
-  
+
+#if 0
   // Handle time
   unsigned long current_time = micros();
   if (current_time >= nextchange && total >= 0 && total < USBLAG_CYCLES) {
@@ -581,6 +392,7 @@ void handleUsblag() {
     total++;
     nextchange = micros() + random(50, 70)*1000 + random(0, 250)*4;
   }
+#endif
 }
 
 
@@ -597,7 +409,7 @@ xbox.overrideInterval = 8;
 }
 */
 
-
+#if 0
 // MAIN LOOP 
 void loop() {
   // Check if main mode changed.
@@ -627,4 +439,31 @@ void loop() {
   // Handle USB
   Usb.Task();
 }
+#endif
 
+
+#if 0
+void setup() {
+        Serial.begin(115200);
+#if !defined(__MIPSEL__)
+        while (!Serial); // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
+#endif
+        Serial.println("Start");
+
+        if (Usb.Init() == -1)
+                Serial.println("OSC did not start.");
+
+        delay(200);
+
+        if (!Hid.SetReportParser(0, &Joy))
+                ErrorMessage<uint8_t > (PSTR("SetReportParser"), 1);
+
+}
+#endif
+
+
+#if 01
+void loop() {
+        Usb.Task();
+}
+#endif
