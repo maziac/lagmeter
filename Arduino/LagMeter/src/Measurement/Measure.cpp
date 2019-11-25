@@ -7,6 +7,7 @@
 
 // Simulation of the joystick button.
 const int OUT_PIN_BUTTON = 8;
+//const int OUT_PIN_BUTTON = 3;
 
 // The analog input for the photo sensor.
 const int IN_PIN_PHOTO_SENSOR = 2;
