@@ -48,7 +48,7 @@ Here are the tested devices together with their default polling rates.
 - Ultimarc U360 Stik: 8ms (10ms)
 - FastestJoystick (TeensyLC): 1ms
 
-Note: the numbers in brackets are the requested polling times. The real polling times are a little less.
+Note: the numbers in brackets are the requested polling times. The real polling times are a little faster.
 
 
 ## SW
@@ -71,7 +71,7 @@ Options 'mspoll' or 'jspoll' did change the
 but still I got 125 Hz by testing with the [evhz](https://gitlab.com/iankelling/evhz) program.
 
 I have tried:
-- Setting options usbhid mousepoll=1 (jspoll=1) in /etc/modprobe.d/usbhid
+- Setting options usbhid mousepoll=1 (jspoll=1) in /etc/modprobe.d/usbhid.conf
 - Setting usbhid.mousepoll=8 on the command line while booting
 - Running sudo modprobe -r usbhid && sudo modprobe usbhid mousepoll=1 (or jspoll=1) from the command line
 
@@ -85,6 +85,7 @@ Problem exactly like [here](https://askubuntu.com/questions/624075/how-do-i-set-
 
 Note: when using the teensy as joystick with a requested poll interval of 1ms the Linux is using the 1ms poll interval. Also evhz is showing 1000Hz (but it's important to use the joystick coordinated, e.g. Joystick.X(analogRead(0)), otherwise evhz will not find any event.)
 
+Note: I tested all USB ports of the NUC. All with the same result.
 
 
 # Test Results
@@ -99,7 +100,7 @@ FastestJoystick allows also a digital output. So this output can be used to meas
 
 
 Setup:
-1. The 'FastestJoystick' is connected via USB to the NUC (linux) system. It is used tp outut a signal.
+1. The 'FastestJoystick' is connected via USB to the NUC (linux) system. It is used to outut a signal.
 2. The USB-Joystick-under-test is connected to the NUC (linux) system.
 3. The 'inout' (InputOutput) program is started
 4. It will output a digital signal for each button press
@@ -173,6 +174,8 @@ Repeated delay measuremens (100 cycles): 3-5ms.
 
 (Very independent of system load. Same times measured also with attract-mode and mame running at the same time in the foreground).
 
+Note: when added a USB 2.0 hub this increases by 1ms to: 4-6ms.
+
 
 #### Buffalo Gamepad
 
@@ -191,10 +194,36 @@ Delay measurement (100 cycles): 4-47 ms
 
 #### Ultimarc Ultrastik 360
 
-Delay measurement (100 cycles): 8-17 ms
+Delay measurement (100 cycles): 8-17 ms (down to 3-6ms with special firmware see below)
 
-Note: The Ultrastik 360 is an analog joystick. Potentially the AD conversion will be a little bit slower than just a button press.
-I had no possibility to measure it, but I don't expect that there is a significant additional delay.
+Note: The Ultrastik 360 is an analog joystick. 
+I had no possibility to measure the USB analog axes delay directly.
+Instead I measured the button input delay of the device and assume that the analog axes delay is very similar.
+
+More notes:
+The measurements above were done with the "normal" firmware (e.g. Ultrastik_37.ufw).
+
+
+
+##### Special Firmware 
+
+I also tested the Ultrastik_37_analogueout.ufw firmware which doesn't work as an USB joystick but instead puts the axes analog out to pins 9 and 10.
+This showed that the AD/DA conversion is fast enough.
+
+The picture shows the moving of the joystick from center to e.g. "up". This was carried out manually and I could achieve this in about 10 ms. You can see this from the voltage which reaches its maximum after 10 ms.
+![](../Images/ustik360_analog_out_speed1.BMP)
+
+When we increase the resolution we can also see the staircase pattern of the AD/DA conversion:
+![](../Images/ustik360_analog_out_speed2.BMP)
+So I think it's safe to assume that the UStik360 internally requires 0.5 ms for an AD/DA conversion. That's fine.
+
+
+From Andy I also got special firmware with different requested USB poll times:
+- 2 ms: This gives a delay of 3-7 ms (100 cycles)
+- 1 ms: This gives a delay of 3-6 ms (100 cycles). I.e. it does not really improve anymore compared to 1ms. (Maybe I need to repeat this with the NUCi7?)
+Note: with evhz is also measured 500Hz "only". With FastestJoystick I can reach up to 1000Hz in evhz.
+
+Note: when added a USB 2.0 hub the (1ms poll) measurements are very much the same: 3-6ms.
 
 
 #### Microsoft X-Box 360 pad (black)
