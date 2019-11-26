@@ -1,111 +1,91 @@
 #include <usbhid.h>
 #include <hiduniversal.h>
 #include <usbhub.h>
+#include <MemoryUsage.h>
 
-struct GamePadEventData {
-        uint8_t X, Y, Z1, Z2, Rz;
-};
 
-class JoystickEvents {
-public:
-    
-    void JoystickEvents::OnGamePadChanged(const GamePadEventData *evt) {
-            Serial.print("X1: ");
-            PrintHex<uint8_t > (evt->X, 0x80);
-            Serial.print("\tY1: ");
-            PrintHex<uint8_t > (evt->Y, 0x80);
-            Serial.print("\tX2: ");
-            PrintHex<uint8_t > (evt->Z1, 0x80);
-            Serial.print("\tY2: ");
-            PrintHex<uint8_t > (evt->Z2, 0x80);
-            Serial.print("\tRz: ");
-            PrintHex<uint8_t > (evt->Rz, 0x80);
-            Serial.println("");
-    }
-    
-    void JoystickEvents::OnHatSwitch(uint8_t hat) {
-            Serial.print("Hat Switch: ");
-            PrintHex<uint8_t > (hat, 0x80);
-            Serial.println("");
-    }
-    
-    void JoystickEvents::OnButtonUp(uint8_t but_id) {
-            Serial.print("Up: ");
-            Serial.println(but_id, DEC);
-    }
-    
-    void JoystickEvents::OnButtonDn(uint8_t but_id) {
-            Serial.print("Dn: ");
-            Serial.println(but_id, DEC);
-    }
-};
+// Max values to observe.
+#define MAX_VALUES  64
 
-#define RPT_GEMEPAD_LEN    5
 
 class JoystickReportParser : public HIDReportParser {
-        JoystickEvents *joyEvents;
-
-        uint8_t oldPad[RPT_GEMEPAD_LEN];
-        uint8_t oldHat;
-        uint16_t oldButtons;
+protected:
+  uint8_t lastReportedValues[MAX_VALUES] = {};
+  uint8_t idleValues[MAX_VALUES] = {};
+  unsigned long startTime;
 
 public:
+  JoystickReportParser::JoystickReportParser() {
+    reset();
+  }
 
-  JoystickReportParser::JoystickReportParser(JoystickEvents *evt) :
-  joyEvents(evt),
-  oldHat(0xDE),
-  oldButtons(0) {
-          for (uint8_t i = 0; i < RPT_GEMEPAD_LEN; i++)
-                  oldPad[i] = 0xD;
+  void reset() {
+    startTime = 0;
+    joystickButtonPressed = false;
+    joystickButtonChanged = false;
+    Serial.println("joystickButtonPressed = false");
   }
-  
-  void JoystickReportParser::Parse(USBHID *hid, bool is_rpt_id, uint8_t len, uint8_t *buf) {
-          bool match = true;
-  
-          // Checking if there are changes in report since the method was last called
-          for (uint8_t i = 0; i < RPT_GEMEPAD_LEN; i++)
-                  if (buf[i] != oldPad[i]) {
-                          match = false;
-                          break;
-                  }
-  
-          // Calling Game Pad event handler
-          if (!match && joyEvents) {
-                  joyEvents->OnGamePadChanged((const GamePadEventData*)buf);
-  
-                  for (uint8_t i = 0; i < RPT_GEMEPAD_LEN; i++) oldPad[i] = buf[i];
-          }
-  
-          uint8_t hat = (buf[5] & 0xF);
-  
-          // Calling Hat Switch event handler
-          if (hat != oldHat && joyEvents) {
-                  joyEvents->OnHatSwitch(hat);
-                  oldHat = hat;
-          }
-  
-          uint16_t buttons = (0x0000 | buf[6]);
-          buttons <<= 4;
-          buttons |= (buf[5] >> 4);
-          uint16_t changes = (buttons ^ oldButtons);
-  
-          // Calling Button Event Handler for every button changed
-          if (changes) {
-                  for (uint8_t i = 0; i < 0x0C; i++) {
-                          uint16_t mask = (0x0001 << i);
-  
-                          if (((mask & changes) > 0) && joyEvents) {
-                                  if ((buttons & mask) > 0)
-                                          joyEvents->OnButtonDn(i + 1);
-                                  else
-                                          joyEvents->OnButtonUp(i + 1);
-                          }
-                  }
-                  oldButtons = buttons;
-          }
+
+  // Store the last reported values as Idle values.
+  // Any change to these values is recognized as "button press".
+  void setIdleValues() {
+    for(uint8_t i=0; i<MAX_VALUES; i++) {
+      idleValues[i] = lastReportedValues[i];
+    }
   }
+
+  void JoystickReportParser::Parse(USBHID* hid, bool is_rpt_id, uint8_t len, uint8_t* buf) {
+    // Print
+    for(uint8_t i=0; i<len; i++) {
+      SerialPrintHex<uint8_t>(buf[i]); 
+      Serial.print(F(", "));
+    }
+    Serial.println();
+    
+    // Check if changed
+    uint8_t count = min(MAX_VALUES, len);
+    bool match = true;
+    // Check and copy
+    for(uint8_t i=0; i<count; i++) {
+      if(buf[i] != lastReportedValues[i]) {
+        match = false;
+        lastReportedValues[i] = buf[i];
+      }
+    }
+
+    // Return if no change
+    if(match)
+      return;
+
+    // Suppress for some time (1s)
+    unsigned long time = millis();
+    Serial.print(time);
+    Serial.print(F(", "));
+    Serial.print(startTime);
+    if(startTime == 0)
+      startTime = time;
+    if(time > startTime+1000)
+      joystickButtonChanged = true;
+    Serial.print(F(", "));
+    Serial.println(joystickButtonChanged);
+    
+    // Values changed. Check if "button press"
+    for(uint8_t i=0; i<count; i++) {
+      if(idleValues[i] != lastReportedValues[i]) {
+        // Some button was pressed.
+        joystickButtonPressed = true;
+        Serial.println("joystickButtonPressed = true");
+        return;
+      }
+    }
+
+    // Idle
+    joystickButtonPressed = false;
+    Serial.println("joystickButtonPressed = false");
+   }
 };
 
+JoystickReportParser HidJoyParser;
 
 
 
@@ -113,7 +93,7 @@ class UsbHidJoystick : public HIDUniversal {
 public:
   uint8_t pollIntervalCopy; // The real variable is private.
   
-  UsbHidJoystick(USB* p) : HIDUniversal (p) {};
+  UsbHidJoystick(USB* p) : HIDUniversal (p), pollIntervalCopy(0) {};
   
   virtual uint8_t Init (uint8_t parent, uint8_t port, bool lowspeed) {
     uint8_t res = HIDUniversal::Init(parent, port, lowspeed);
@@ -121,12 +101,26 @@ public:
     Serial.print("Poll interval: ");
     Serial.print(pollIntervalCopy);
     Serial.println(" ms.");
+    MEMORY_PRINT_START
+    MEMORY_PRINT_HEAPSTART
+    MEMORY_PRINT_HEAPEND
+    MEMORY_PRINT_STACKSTART
+    MEMORY_PRINT_END
+    MEMORY_PRINT_HEAPSIZE
+    FREERAM_PRINT
+    requestedPollInterval = pollIntervalCopy;
+    usbMode = true;
+    HidJoyParser.reset();
     return res;
   }
   
   virtual uint8_t Release () {
     uint8_t res = HIDUniversal::Release();
     Serial.println("UsbHidJoystick::Release done.");
+    usbMode = false;
+    HidJoyParser.reset();
+    pollIntervalCopy = 0;
+    requestedPollInterval = 0;
     return res;
   }
 
@@ -142,9 +136,14 @@ public:
     Serial.print(", ");
     Serial.println(ep->bInterval);
 #else
-    pollIntervalCopy = ep->bInterval;
     HIDUniversal::EndpointXtract(conf, iface, alt, proto, ep);
-    Serial.println("UsbHidJoystick::EndpointXtract done.");
+    if(pollIntervalCopy == 0)
+      pollIntervalCopy = ep->bInterval; // Use the first found interval
+    Serial.print("UsbHidJoystick::EndpointXtract done. Interface ");
+    Serial.print(iface);
+    Serial.print(", ");
+    Serial.print(ep->bInterval);
+    Serial.println(" ms.");
 #endif
   }
 };
@@ -153,13 +152,13 @@ public:
 
 // Create the HID instances.
 UsbHidJoystick Hid(&Usb);
-JoystickEvents JoyEvents;
-JoystickReportParser Joy(&JoyEvents);
 
 
 
 // Initialize. Called from 'setup'.
 void USBHIDInit() {
-  if (!Hid.SetReportParser(0, &Joy))
-    ErrorMessage<uint8_t > (PSTR("SetReportParser"), 1);
+  if (!Hid.SetReportParser(0, &HidJoyParser)) { 
+    Serial.println("SetReportParser problem.");
+    Error(F("Error:"), F("SetReportParser!!!"));
+  }
 }

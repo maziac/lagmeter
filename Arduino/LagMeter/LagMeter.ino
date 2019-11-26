@@ -51,15 +51,6 @@ However it was tested only with a 16MHz CPU.
 #define SERIAL_IF_ENABLED
 
 
-
-// USB--------------------------------------
-USB Usb;
-USBHub Hub(&Usb);
-byte button = 0;
-unsigned long time;
-// -----------------------------------------
-
-
 // Define used Keys.
 // Lagmeter:
 const int KEY_TEST_PHOTO_BUTTON = LCD_KEY_SELECT;
@@ -73,13 +64,24 @@ const int KEY_USBLAG_MEASURE_8MS = LCD_KEY_UP;
 const int KEY_USBLAG_TEST_BUTTON = LCD_KEY_SELECT;
 
 
+
+// USB--------------------------------------
+bool joystickButtonPressed = false;
+bool joystickButtonChanged = false;
+USB Usb;
+USBHub Hub(&Usb);
+byte button = 0;
+unsigned long time;
+
 // If USB device (game controller) is attached (via USB) then the mode is changed to
 // true. This will also change the menu.
-int usblagMode = false;
-int prevUsblagMode = true;  // previous mode
+bool usbMode = false;
+bool prevUsbMode = true;  // previous mode
 
 // The poll interval requested by the attached USB device.
 int requestedPollInterval = 0;
+// -----------------------------------------
+
 
 
 // Prints the main lag-meter menu.
@@ -108,22 +110,37 @@ const int USBLAG_CYCLES = 100;
 #define BUTTON_PIN 8
 
 
+// Prints a different pattern for button press or release.
+void printJoystickButtonChanged() {
+  static bool lastButtonPattern = false;
+  if(joystickButtonChanged) {
+    joystickButtonChanged = false;
+    lcd.setCursor(0,1);
+    lastButtonPattern = !lastButtonPattern;
+    if(lastButtonPattern)
+      lcd.print(F("####----####----"));
+    else
+      lcd.print(F("----####----####"));
+  }
+}
+
+        
 // Prints the measured time for usblag.
 // @param measuredTime The measured time in ms.
-extern int total;
+int total;
 float usblagMin;
 float usblagMax;
 float usblagAvg;
-bool usbEventToggle = false;
+//bool usbEventToggle = false;
 void printUsbLag(float measuredTime) {
     if(total < 0) {
       lcd.setCursor(0,1);
       // Print req. poll interval
       lcd.print(requestedPollInterval);
       lcd.print(F("ms "));
-      // Print something in 2nd line. Can be used as a test if game controller reacts.
-       usbEventToggle = !usbEventToggle;
-      if(usbEventToggle)
+      // Print something in 2nd line. Can be used as a test that game controller reacts.
+      //usbEventToggle = !usbEventToggle;
+      if(joystickButtonPressed)
         lcd.print(F("####----####"));
       else
         lcd.print(F("----####----"));
@@ -182,7 +199,7 @@ void printUsbLag(float measuredTime) {
 }
 
 
-#if 01
+
 // SETUP
 void setup() {
 
@@ -219,7 +236,11 @@ void setup() {
 
   //nextchange = micros() + 5000*1000;
 
-
+   // Start in Lagmeter mode
+   printLagMeterMenu();
+   usbMode = false;
+   prevUsbMode = false;
+   
 #if 0
 // Test
   Serial.println(secsToString(0l));
@@ -242,7 +263,6 @@ void setup() {
   Serial.println(longToString(100000000l));
 #endif 
 }
-#endif
 
 
 // Checks for keypresses for LagMeter mode.
@@ -312,6 +332,8 @@ void usblagTestButton() {
 
 // Checks for keypresses for usblag mode.
 void handleUsblag() {
+  static bool prevJoystickButtonPressed = false;
+  
   // Check to print the menu
   if(abortAll) {
     digitalWrite(BUTTON_PIN, false);
@@ -320,6 +342,11 @@ void handleUsblag() {
     printUsblagMenu();
   }
 
+  // Prints pattern if joystick button has changed
+  printJoystickButtonChanged();
+  return;
+
+  
   // Handle user input
   int key = getLcdKey();
   if(key != LCD_KEY_NONE) {
@@ -396,26 +423,30 @@ void handleUsblag() {
 }
 
 
-/*
-void loop() {
-  static bool out;
-  Hid.overrideInterval = 8;
-xbox.overrideInterval = 8;
-  pinMode(3, OUTPUT);
-  out = !out;
-  digitalWrite(3, out);
-  Usb.Task();
-  //delay(1);
-}
-*/
-
-#if 0
 // MAIN LOOP 
 void loop() {
+
+#if 01
+   // Check if main mode changed.
+  if(usbMode != prevUsbMode) {
+    prevUsbMode = usbMode;
+    if(usbMode) {
+      // Usblag mode
+      printUsblagMenu();
+      total = -1; // Show game controller action
+    }
+    else {
+      // Reset
+      asm( "   jmp 0");
+    }
+  }
+#endif   
+  
+#if 0
   // Check if main mode changed.
-  if(usblagMode != prevUsblagMode) {
-    prevUsblagMode = usblagMode;
-    if(usblagMode) {
+  if(usbMode != prevUsbMode) {
+    prevUsbMode = usbMode;
+    if(usbMode) {
       // Usblag mode
       printUsblagMenu();
       total = -1; // Show game controller action
@@ -426,8 +457,9 @@ void loop() {
     }
   }
 
+#if 01
   // Handle mode
-  if(usblagMode) {
+  if(usbMode) {
     // Usblag mode
     handleUsblag();
   }
@@ -435,35 +467,9 @@ void loop() {
     // Lagmeter mode
     handleLagMeter();
   }
+#endif
+#endif
 
   // Handle USB
   Usb.Task();
 }
-#endif
-
-
-#if 0
-void setup() {
-        Serial.begin(115200);
-#if !defined(__MIPSEL__)
-        while (!Serial); // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
-#endif
-        Serial.println("Start");
-
-        if (Usb.Init() == -1)
-                Serial.println("OSC did not start.");
-
-        delay(200);
-
-        if (!Hid.SetReportParser(0, &Joy))
-                ErrorMessage<uint8_t > (PSTR("SetReportParser"), 1);
-
-}
-#endif
-
-
-#if 01
-void loop() {
-        Usb.Task();
-}
-#endif
