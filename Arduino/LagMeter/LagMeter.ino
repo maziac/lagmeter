@@ -426,8 +426,7 @@ void handleUsblag() {
 // MAIN LOOP 
 void loop() {
 
-#if 01
-   // Check if main mode changed.
+  // Check if main mode changed.
   if(usbMode != prevUsbMode) {
     prevUsbMode = usbMode;
     if(usbMode) {
@@ -440,23 +439,7 @@ void loop() {
       asm( "   jmp 0");
     }
   }
-#endif   
   
-#if 0
-  // Check if main mode changed.
-  if(usbMode != prevUsbMode) {
-    prevUsbMode = usbMode;
-    if(usbMode) {
-      // Usblag mode
-      printUsblagMenu();
-      total = -1; // Show game controller action
-    }
-    else {
-      // Lagmeter mode
-      printLagMeterMenu();
-    }
-  }
-
 #if 01
   // Handle mode
   if(usbMode) {
@@ -467,7 +450,6 @@ void loop() {
     // Lagmeter mode
     handleLagMeter();
   }
-#endif
 #endif
 
   // Handle USB
