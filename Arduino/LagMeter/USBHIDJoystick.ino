@@ -1,7 +1,7 @@
 #include <usbhid.h>
 #include <hiduniversal.h>
 #include <usbhub.h>
-#include <MemoryUsage.h>
+//#include <MemoryUsage.h>
 
 
 // Max values to observe.
@@ -12,18 +12,10 @@ class JoystickReportParser : public HIDReportParser {
 protected:
   uint8_t lastReportedValues[MAX_VALUES] = {};
   uint8_t idleValues[MAX_VALUES] = {};
-  unsigned long startTime;
+  unsigned long startTime = 0;
 
 public:
   JoystickReportParser::JoystickReportParser() {
-    reset();
-  }
-
-  void reset() {
-    startTime = 0;
-    joystickButtonPressed = false;
-    joystickButtonChanged = false;
-    Serial.println("joystickButtonPressed = false");
   }
 
   // Store the last reported values as Idle values.
@@ -101,16 +93,8 @@ public:
     Serial.print("Poll interval: ");
     Serial.print(pollIntervalCopy);
     Serial.println(" ms.");
-    MEMORY_PRINT_START
-    MEMORY_PRINT_HEAPSTART
-    MEMORY_PRINT_HEAPEND
-    MEMORY_PRINT_STACKSTART
-    MEMORY_PRINT_END
-    MEMORY_PRINT_HEAPSIZE
-    FREERAM_PRINT
     requestedPollInterval = pollIntervalCopy;
     usbMode = true;
-    HidJoyParser.reset();
     return res;
   }
   
@@ -118,24 +102,11 @@ public:
     uint8_t res = HIDUniversal::Release();
     Serial.println("UsbHidJoystick::Release done.");
     usbMode = false;
-    HidJoyParser.reset();
-    pollIntervalCopy = 0;
-    requestedPollInterval = 0;
     return res;
   }
 
 
   virtual void EndpointXtract(uint8_t conf, uint8_t iface, uint8_t alt, uint8_t proto, const USB_ENDPOINT_DESCRIPTOR* ep) {
-#if 0
-    Serial.print("UsbHidJoystick::EndpointXtract: ");
-    Serial.print(iface);
-    Serial.print(", ");
-    Serial.print(ep->bInterval);
-    ((USB_ENDPOINT_DESCRIPTOR*)ep)->bInterval = 4;  // Funktioniert nicht
-    HIDUniversal::EndpointXtract(conf, iface, alt, proto, ep);
-    Serial.print(", ");
-    Serial.println(ep->bInterval);
-#else
     HIDUniversal::EndpointXtract(conf, iface, alt, proto, ep);
     if(pollIntervalCopy == 0)
       pollIntervalCopy = ep->bInterval; // Use the first found interval
@@ -144,7 +115,6 @@ public:
     Serial.print(", ");
     Serial.print(ep->bInterval);
     Serial.println(" ms.");
-#endif
   }
 };
 
