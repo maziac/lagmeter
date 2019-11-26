@@ -10,7 +10,7 @@
  * or make.
  *
  * Run e.g.:
- * ./joystick /dev/input/jsX /dev/serial/by-id/usb-Maziac_Arcade_Joystick_Encoder_5668360-if00 
+ * ./inout /dev/input/jsX /dev/serial/by-id/usb-Maziac_Arcade_Joystick_Encoder_5668360-if00 
  *
  * See also:
  * https://www.kernel.org/doc/Documentation/input/joystick-api.txt
@@ -173,7 +173,7 @@ int main(int argc, char *argv[])
         {
             case JS_EVENT_BUTTON:
                 printf("Button %u %s\n", event.number, event.value ? "pressed" : "released");
-                write_dout(serial, 1, event.value);
+                write_dout(serial, 0, event.value);
                 break;
             case JS_EVENT_AXIS:
                 axis = get_axis_state(&event, axes);

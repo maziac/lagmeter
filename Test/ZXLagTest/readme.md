@@ -11,5 +11,5 @@ Seems ot be emulator specific because in the program the border is changed earli
 
 Program can be started in MAME/MESS with:
 ~~~
-mess64 spec128 -dump zxlagtest.sna -rompath .../zspectrum/roms -video opengl -uiactive
+mess64 spec128 -dump zxlagtest.sna -rompath .../zspectrum/roms -video opengl -ui_active
 ~~~

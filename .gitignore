@@ -5,4 +5,5 @@ notes.md
 **/.tmp/
 build/
 inout
-
+xlagtest
+Test/InputOutput/cfg/
