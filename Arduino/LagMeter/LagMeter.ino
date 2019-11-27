@@ -298,13 +298,9 @@ void handleLagMeter() {
 // ON/OFF of the button and showing the result.
 // I.e. a quick test to see if the connection is OK.
 void usblagTestButton() {
-  // Use USB polling interval of 1ms.
-  //Hid.overrideInterval = 1;
-  //xbox.overrideInterval = 1;
   lcd.clear();
   lcd.print(F("Button:"));
   int outpValue = LOW;
-  total = -1;
   while(!abortAll) {
     // Stimulate button
     outpValue = ~outpValue;
@@ -321,12 +317,13 @@ void usblagTestButton() {
     for(int i=0; i<1500; i++) {
       delay(1); // wait 1ms
       Usb.Task();
+      printJoystickButtonChanged();
       if(isAbort()) break;
     }
 
   }
   // Button off
-  digitalWrite(BUTTON_PIN, button);
+  digitalWrite(BUTTON_PIN, LOW);
 }
 
 
@@ -342,11 +339,9 @@ void handleUsblag() {
     printUsblagMenu();
   }
 
-  // Prints pattern if joystick button has changed
+  // Prints patterns if joystick button has changed
   printJoystickButtonChanged();
-  return;
 
-  
   // Handle user input
   int key = getLcdKey();
   if(key != LCD_KEY_NONE) {
