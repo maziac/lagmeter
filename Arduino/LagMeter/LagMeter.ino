@@ -76,6 +76,7 @@ unsigned long time;
 // true. This will also change the menu.
 bool usbMode = false;
 bool prevUsbMode = true;  // previous mode
+bool xboxMode = false;
 
 // The poll interval used to override the requested value. 0 = no override.
 // USed for both: to show the requested value and to override the requested value.
@@ -97,9 +98,14 @@ void printUsblagMenu() {
   lcd.clear();
   lcd.print(F("** USB Lag  **"));
   lcd.setCursor(0, 1);
-  lcd.print(F("Req. poll="));
-  lcd.print(usedPollInterval);
-  lcd.print(F("ms"));
+  if(xboxMode) {
+    lcd.print(F("xbox"));
+  }
+  else {
+    lcd.print(F("Req. poll="));
+    lcd.print(usedPollInterval);
+    lcd.print(F("ms"));
+  }
 }
 
 
@@ -414,24 +420,38 @@ void handleUsblag() {
     case KEY_USBLAG_TEST_BUTTON:
       // ON/OFF of the button and showing the result. I.e. a quick test to see if the connection is OK.
       usblagTestButton();
+      printUsblagMenu();
+      joystickButtonChanged = false;
       abortAll = false;
       break;
             
     case KEY_USBLAG_MEASURE:
       // Start testing usb device measurement
       usblagMeasure();
-      abortAll = false;
-      joystickButtonChanged = false;
       printUsblagMenu();
+      joystickButtonChanged = false;
+      abortAll = false;
       break;
            
     case KEY_USBLAG_MEASURE_1MS:
-      // Start testing usb device measurement
-      setPollInterval(1); // Use 1ms poll interval
-      usblagMeasure();
-      abortAll = false;
-      joystickButtonChanged = false;
-      printUsblagMenu();
+      if(xboxMode) {
+        // Not available in xbox mode
+          lcd.clear();
+          lcd.print(F("Not available."));
+          while(!isUsbAbort()) 
+            delay(100);
+          printUsblagMenu();
+          joystickButtonChanged = false;
+          abortAll = false;
+      }
+      else {
+        // Start testing usb device measurement
+        setPollInterval(1); // Use 1ms poll interval
+        usblagMeasure();
+        printUsblagMenu();
+        joystickButtonChanged = false;
+        abortAll = false;
+      }
       break;
   }
 }

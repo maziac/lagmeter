@@ -13,6 +13,9 @@ Contact information
 Circuits At Home, LTD
 Web      :  http://www.circuitsathome.com
 e-mail   :  support@circuitsathome.com
+
+Note: The sources have been slightly modifed to choose the lowest polling interval instead 
+of the highest if several endpoints request different poll intervals.
  */
 
 #include "modifiedhiduniversal.h"

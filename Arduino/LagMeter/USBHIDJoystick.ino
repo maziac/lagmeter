@@ -1,9 +1,4 @@
-#include <usbhid.h>
-//#include <hiduniversal.h>
 #include "src/usb/modifiedhiduniversal.h"
-#include <usbhub.h>
-//#include <MemoryUsage.h>
-
 
 // Max values to observe.
 #define MAX_VALUES  64
@@ -82,9 +77,10 @@ JoystickReportParser HidJoyParser;
 
 
 class UsbHidJoystick : public ModifiedHIDUniversal {
-public:
+protected:
   String epPollIntervalsString;
-  
+
+public:
   UsbHidJoystick(USB* p) : ModifiedHIDUniversal (p) {};
   
   virtual uint8_t Init (uint8_t parent, uint8_t port, bool lowspeed) {
@@ -139,6 +135,7 @@ UsbHidJoystick Hid(&Usb);
 
 // Initialize. Called from 'setup'.
 void USBHIDInit() {
+  return;
   if (!Hid.SetReportParser(0, &HidJoyParser)) { 
     Serial.println("SetReportParser problem.");
     Error(F("Error:"), F("SetReportParser!!!"));
