@@ -83,17 +83,22 @@ JoystickReportParser HidJoyParser;
 
 class UsbHidJoystick : public ModifiedHIDUniversal {
 public:
-  uint8_t pollIntervalCopy; // The real variable is private.
+  String epPollIntervalsString;
   
-  UsbHidJoystick(USB* p) : ModifiedHIDUniversal (p), pollIntervalCopy(0) {};
+  UsbHidJoystick(USB* p) : ModifiedHIDUniversal (p) {};
   
   virtual uint8_t Init (uint8_t parent, uint8_t port, bool lowspeed) {
     uint8_t res = ModifiedHIDUniversal::Init(parent, port, lowspeed);
+#if 0
     Serial.println("UsbHidJoystick::Init done.");
     Serial.print("Poll interval: ");
-    Serial.print(pollIntervalCopy);
-    Serial.println(" ms.");
-    requestedPollInterval = pollIntervalCopy;
+    Serial.print(epPollIntervalsString);
+    Serial.print(" ms -> ");
+    Serial.print(pollInterval);
+    Serial.println(" ms");
+#endif
+    requestedPollInterval = pollInterval;
+    //pollInterval = 1;
     usbMode = true;
     return res;
   }
@@ -108,13 +113,16 @@ public:
 
   virtual void EndpointXtract(uint8_t conf, uint8_t iface, uint8_t alt, uint8_t proto, const USB_ENDPOINT_DESCRIPTOR* ep) {
     ModifiedHIDUniversal::EndpointXtract(conf, iface, alt, proto, ep);
-    if(pollIntervalCopy == 0)
-      pollIntervalCopy = ep->bInterval; // Use the first found interval
+#if 0
     Serial.print("UsbHidJoystick::EndpointXtract done. Interface ");
     Serial.print(iface);
     Serial.print(", ");
     Serial.print(ep->bInterval);
     Serial.println(" ms.");
+#endif
+    if(epPollIntervalsString.length() != 0)
+      epPollIntervalsString += ", ";
+    epPollIntervalsString += ep->bInterval;
   }
 };
 
