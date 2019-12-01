@@ -260,70 +260,9 @@ void usblagTestButton() {
 
 
 // Measures the usb lag. I.e. the time from button press to received USB reaction.
-void usblagMeasure() {
-  // Show test title
-  lcd.clear();
-  lcd.print(F("Test: USB lag"));
-  waitMs(TITLE_TIME); if(isAbort()) return;
-
-  // Initialize
-  digitalWrite(BUTTON_PIN, LOW);
-
-  // Calibrate, i.e. wait a small moment 
-  lcd.clear();
-  lcd.print(F("Calibr. Don't"));
-  lcd.setCursor(0, 1);
-  lcd.print(F("touch joystick."));
-
-  for(int i=0; i<1000; i++) {
-    Usb.Task();
-    waitMs(2); if(isAbort()) return;
-  }
-  setHidIdleValues();  
-
-  lcd.clear();
-  for(int i=1; i<=COUNT_CYCLES; i++) {
-    // Print
-    lcd.setCursor(0,0);
-    Usb.Task();
-    lcd.print(i);
-    Usb.Task();
-    lcd.print(F("/"));
-    Usb.Task();
-    lcd.print(COUNT_CYCLES);
-    Usb.Task();
-    lcd.print(F(": "));
-    Usb.Task();
-
-    // Wait a random time to make sure we really get different results.
-    uint8_t waitRnd = random(70, 150);
-    for(uint8_t i=0; i<waitRnd; i++) {
-      delay(1);
-      if(isAbort()) return;
-      Usb.Task();
-    }
-  
-    // Wait until no button press
-    long startTime = millis();
-    while(joystickButtonPressed) {
-      //waitMs(1); 
-      if(isAbort()) return;   
-      // Check if too long
-      long stopTime = millis();
-      long diffTime = stopTime - startTime;     
-      if(diffTime > 1000) {
-        // More than a second
-        Error(F("Error:"), F("No response!a"));
-        return;
-      }
-      Usb.Task();
-    }
-    
-    for(uint8_t i=0; i<100; i++)
-      Usb.Task();
-  
+int measureHidLag() {
     // Start meassuring
-    startTime = millis();
+    long startTime = millis();
     // "Press" button
     Usb.Task();
     digitalWrite(BUTTON_PIN, HIGH);
@@ -350,14 +289,115 @@ void usblagMeasure() {
       Usb.Task();
     }
 
+    return diffTime;
+}
+
+
+// Measures the usb HID lag for 100x.
+void usblagMeasure() {
+  // Show test title
+  lcd.clear();
+  lcd.print(F("Test: USB lag"));
+  waitMs(TITLE_TIME); if(isAbort()) return;
+
+  // Initialize
+  digitalWrite(BUTTON_PIN, LOW);
+
+  // Calibrate, i.e. wait a small moment 
+  lcd.clear();
+  lcd.print(F("Calibr. Don't"));
+  lcd.setCursor(0, 1);
+  lcd.print(F("touch joystick."));
+
+  for(int i=0; i<1000; i++) {
+    Usb.Task();
+    waitMs(2); if(isAbort()) return;
+  }
+  setHidIdleValues();  
+
+  lcd.clear();
+  struct MinMax timeRange = {1023, 0};
+  float avg = 0.0;  
+  for(int i=1; i<=COUNT_CYCLES; i++) {
+    // Print
+    lcd.setCursor(0,0);
+    Usb.Task();
+    lcd.print(i);
+    Usb.Task();
+    lcd.print(F("/"));
+    Usb.Task();
+    lcd.print(COUNT_CYCLES);
+    Usb.Task();
+    lcd.print(F(": "));
+    Usb.Task();
+
+    // Wait a random time to make sure we really get different results.
+    uint8_t waitRnd = random(70, 150);
+    for(uint8_t i=0; i<waitRnd; i++) {
+      delay(1);
+      if(isAbort()) return;
+      Usb.Task();
+    }
+  
+    // Measure lag
+    int time = measureHidLag();
+    if(isAbort()) return;
+    
     // Output result: 
-    lcd.print(diffTime);
+    lcd.print(time);
     Usb.Task();
     lcd.print(F("ms     "));
     Usb.Task();
 
+    // Calculate max/min.
+    if(time > timeRange.max)
+      timeRange.max = time;
+    if(time < timeRange.min)
+      timeRange.min = time;
+
+    // Print min/max result
+    lcd.setCursor(5,1);
+    if(timeRange.min != timeRange.max) {
+      lcd.print(timeRange.min);
+      lcd.print(F("-"));
+    }
+    lcd.print(timeRange.max);
+    lcd.print(F("ms     "));
+
+    // Calculate average
+    avg += time;
+    
     // "Release" button
     digitalWrite(BUTTON_PIN, LOW);
+
+    // Wait until no button press
+    long startTime = millis();
+    while(joystickButtonPressed) {
+      //waitMs(1); 
+      if(isAbort()) return;   
+      // Check if too long
+      long stopTime = millis();
+      long diffTime = stopTime - startTime;     
+      if(diffTime > 1000) {
+        // More than a second
+        Error(F("Error:"), F("No response!a"));
+        return;
+      }
+      Usb.Task();
+    }
+
+  } 
+  
+  // Print average:
+  avg /= COUNT_CYCLES;
+  lcd.setCursor(0,0);
+  lcd.print(F("Avg lag: "));
+  lcd.print((int)avg);
+  lcd.print(F("ms     "));
+
+  // Wait until keypress
+  while(getLcdKey() == LCD_KEY_NONE) {
+    delay(1);
   }
 }
 
@@ -373,11 +413,15 @@ void handleUsblag() {
     case KEY_USBLAG_TEST_BUTTON:
       // ON/OFF of the button and showing the result. I.e. a quick test to see if the connection is OK.
       usblagTestButton();
+      abortAll = false;
       break;
             
     case KEY_USBLAG_MEASURE:
       // Start testing usb device measurement
       usblagMeasure();
+      abortAll = false;
+      joystickButtonChanged = false;
+      printUsblagMenu();
       break;
   }
 }
@@ -404,7 +448,7 @@ void loop() {
   if(usbMode) {
     // Usblag mode
     handleUsblag();
-  }
+   }
   else {
     // Lagmeter mode
     handleLagMeter();
