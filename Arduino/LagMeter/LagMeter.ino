@@ -214,6 +214,15 @@ void handleLagMeter() {
 }
 
 
+// isUsbAbort: returns true if any key is pressed or
+// if usbMode is false and sets 'abortAll' to true.
+bool isUsbAbort() {
+  if(!usbMode)
+    abortAll = true;
+  return isAbort();
+}
+
+
 // ON/OFF of the button and showing the result.
 // I.e. a quick test to see if the connection is OK.
 void usblagTestButton() {
@@ -237,7 +246,7 @@ void usblagTestButton() {
       delay(1); // wait 1ms
       Usb.Task();
       printJoystickButtonChanged();
-      if(isAbort()) break;
+      if(isUsbAbort()) break;
     }
 
   }
@@ -263,7 +272,7 @@ int measureUsbLag() {
   long diffTime = 0;   
   while(!joystickButtonPressed) {
     Usb.Task();
-    if(isAbort()) return;
+    if(isUsbAbort()) return;
     // Stop measuring
     long stopTime = micros();
     diffTime = stopTime - startTime;
@@ -289,7 +298,7 @@ void usblagMeasure() {
   lcd.print(F("Test: USB "));
   lcd.print(usedPollInterval);
   lcd.print(F("ms"));
-  waitMs(TITLE_TIME); if(isAbort()) return;
+  waitMs(TITLE_TIME); if(isUsbAbort()) return;
 
   // Initialize
   digitalWrite(OUT_PIN_BUTTON, LOW);
@@ -302,7 +311,7 @@ void usblagMeasure() {
 
   for(int i=0; i<1000; i++) {
     Usb.Task();
-    waitMs(2); if(isAbort()) return;
+    waitMs(2); if(isUsbAbort()) return;
   }
   setHidIdleValues();  
 
@@ -326,13 +335,13 @@ void usblagMeasure() {
     uint8_t waitRnd = random(70, 150);
     for(uint8_t i=0; i<waitRnd; i++) {
       delay(1);
-      if(isAbort()) return;
+      if(isUsbAbort()) return;
       Usb.Task();
     }
   
     // Measure lag
     int time = measureUsbLag();
-    if(isAbort()) return;
+    if(isUsbAbort()) return;
     
     // Output result: 
     lcd.print(time);
@@ -365,7 +374,7 @@ void usblagMeasure() {
     long startTime = millis();
     while(joystickButtonPressed) {
       //waitMs(1); 
-      if(isAbort()) return;   
+      if(isUsbAbort()) return;   
       // Check if too long
       long stopTime = millis();
       long diffTime = stopTime - startTime;     
@@ -387,8 +396,9 @@ void usblagMeasure() {
   lcd.print(F("ms     "));
 
   // Wait until keypress
-  while(getLcdKey() == LCD_KEY_NONE) {
+  while(!isUsbAbort()) {
     delay(1);
+    Usb.Task();
   }
 }
 
