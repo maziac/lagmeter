@@ -1,22 +1,9 @@
 #include "Utilities.h"
+#include "Common.h"
 #include "Measure.h"
 #include <Arduino.h>
 
-///////////////////////////////////////////////////////////////////
-// Pin configuration:
 
-// Simulation of the joystick button.
-const int OUT_PIN_BUTTON = 8;
-//const int OUT_PIN_BUTTON = 3;
-
-// The analog input for the photo sensor.
-const int IN_PIN_PHOTO_SENSOR = 2;
-
-// The analog input for the SVGA connector (blue, or red or green)
-const int IN_PIN_SVGA = 1;
-
-// Count of cycles to measure the input lag.
-const int COUNT_CYCLES = 100;
 
 // Define this for comparison measurements with an oscilloscope or a camera.
 //#define OUT_PIN_BUTTON_COMPARE_TIME 3
@@ -32,13 +19,6 @@ const int KEY_MEASURE_MIN_DOWN10 = LCD_KEY_LEFT;
 
 // The minimum diff required between min/max ov the SVGA signal.
 #define SVGA_MIN_DIFF  20
-
-// The checked accuracy in ms:
-#define CHECK_ACCURACY  1
-#define CHECK_ACCURACY_ERROR_STR "Err:Accuracy>1ms"
-
-// Time to show the title of each test.
-#define TITLE_TIME  1500    // in ms
 
 
 // Initializes the pins.

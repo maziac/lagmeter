@@ -97,8 +97,7 @@ public:
     Serial.print(pollInterval);
     Serial.println(" ms");
 #endif
-    requestedPollInterval = pollInterval;
-    //pollInterval = 1;
+    usedPollInterval = pollInterval;     
     usbMode = true;
     return res;
   }
@@ -110,6 +109,11 @@ public:
     return res;
   }
 
+  // Sets (Overrides) the poll interval.
+  void setPollInterval(int interval) {
+    pollInterval = interval;
+    usedPollInterval = pollInterval;
+  }
 
   virtual void EndpointXtract(uint8_t conf, uint8_t iface, uint8_t alt, uint8_t proto, const USB_ENDPOINT_DESCRIPTOR* ep) {
     ModifiedHIDUniversal::EndpointXtract(conf, iface, alt, proto, ep);
@@ -146,4 +150,12 @@ void USBHIDInit() {
 // Sets the idle values for the joystick. I.e. no button pressed.
 void setHidIdleValues() {
   HidJoyParser.setIdleValues();
+}
+
+
+// Sets (Overrides) the poll interval.
+void setPollInterval(int pollInterval) {
+  Hid.setPollInterval(pollInterval);
+  Usb.Task();
+  Usb.Task();
 }
