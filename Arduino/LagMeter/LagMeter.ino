@@ -157,10 +157,6 @@ void setup() {
   }
   delay(200);
 
-  USBHIDInit();
-
-  //nextchange = micros() + 5000*1000;
-
    // Start in Lagmeter mode
    printLagMeterMenu();
    usbMode = false;

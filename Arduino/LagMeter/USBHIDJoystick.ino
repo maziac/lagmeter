@@ -95,6 +95,10 @@ public:
 #endif
     usedPollInterval = pollInterval;     
     usbMode = true;
+    if (!SetReportParser(0, &HidJoyParser)) { 
+      Serial.println("SetReportParser problem.");
+      Error(F("Error:"), F("SetReportParser!!!"));
+    }
     return res;
   }
   
@@ -130,17 +134,6 @@ public:
 
 // Create the HID instances.
 UsbHidJoystick Hid(&Usb);
-
-
-
-// Initialize. Called from 'setup'.
-void USBHIDInit() {
-  return;
-  if (!Hid.SetReportParser(0, &HidJoyParser)) { 
-    Serial.println("SetReportParser problem.");
-    Error(F("Error:"), F("SetReportParser!!!"));
-  }
-}
 
 
 
