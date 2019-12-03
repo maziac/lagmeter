@@ -262,7 +262,7 @@ Was destroyed (i.e. HW changed to Teensy) at that time.
 
 #### DragonRise Inc. Generic USB joystick, Zero Delay (Yellow PCB)
 
-100 cycles: 1-31ms
+100 cycles: 3-30ms
 
 ![](Images/LagMeter_DragonRise.jpg)
 
@@ -272,7 +272,6 @@ Was destroyed (i.e. HW changed to Teensy) at that time.
 Delay measurement (100 cycles): 5-48 ms
 
 ![](Images/LagMeter_Microntek.jpg)
-
 
 
 #### Ultimarc Ultrastik 360

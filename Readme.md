@@ -1,10 +1,5 @@
 # LagMeter
 
-**Note: This is still work in progress. I.e. not finished. Conclusions/SW/HW is not ready for public usage. Use only on your own risk.**
-
-
-
-
 The goal of this project is to build a HW/SW that allows for easy measurement of input (output) lag.
 
 The tested setup in my case is a self-made aracde cabinet which is based on a debian/Linux and an Intel NUC HW. But the LagMeter can also be used for other PC-like or even console-like setups.
