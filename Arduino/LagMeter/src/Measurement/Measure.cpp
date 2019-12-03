@@ -49,7 +49,7 @@ void testPhotoSensor() {
 
   // Start
   lcd.clear();
-  lcd.println(F("Button:"));
+  lcd.print(F("Button:"));
   lcd.setCursor(0,1);
   lcd.print(F("Sensor:"));
   int outpValue = LOW;
@@ -458,9 +458,9 @@ void measurePhotoSensor() {
 
 
 
-// Calibrates the AD2  (SVGA) input and measures the
+// Calibrates the AD2 (SVGA) input and measures the
 // input lag for a few cycles.
-// This is normally used for the SVGA input but can alos be tied to other outputs
+// This is normally used for the SVGA input but can also be tied to other outputs
 // like the Teensy digital out from the FastestJoystick project).
 // For SVGA: Uses the blue-output of SVGA (but you could also use red or green).
 // Calibration: 
@@ -587,7 +587,7 @@ void measureAD2() {
 // Uses the blue-output of SVGA (but you could also use red or green).
 // Calibration: 
 //   Simulate joystick button press -> measure svga brightness, i.e. max signal.
-//   Simulate joystick button unpress -> measure svga darkness, i.e. max signal.
+//   Simulate joystick button unpress -> measure svga darkness, i.e. min signal.
 //   Simulate joystick button press -> measure min/max photo
 //   sensor value.
 //   Simulate joystick button unpress -> measure min/max photo

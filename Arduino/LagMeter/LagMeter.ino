@@ -44,7 +44,7 @@ However it was tested only with a 16MHz CPU.
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "0.20"
+#define SW_VERSION "1.0"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
@@ -298,8 +298,13 @@ void usblagMeasure() {
   // Show test title
   lcd.clear();
   lcd.print(F("Test: USB "));
-  lcd.print(usedPollInterval);
-  lcd.print(F("ms"));
+  if(xboxMode) {
+    lcd.print(F("xbox"));
+  }
+  else {
+    lcd.print(usedPollInterval);
+    lcd.print(F("ms"));
+  }
   waitMs(TITLE_TIME); if(isUsbAbort()) return;
 
   // Initialize
@@ -382,7 +387,7 @@ void usblagMeasure() {
       long diffTime = stopTime - startTime;     
       if(diffTime > 1000) {
         // More than a second
-        Error(F("Error:"), F("No response!a"));
+        Error(F("Error:"), F("No response."));
         return;
       }
       Usb.Task();

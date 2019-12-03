@@ -9,7 +9,8 @@ protected:
   uint8_t lastReportedValues[MAX_VALUES] = {};
   uint8_t idleValues[MAX_VALUES] = {};
   unsigned long startTime = 0;
-
+  const uint8_t startIndex = 5;
+  
 public:
   JoystickReportParser::JoystickReportParser() {
   }
@@ -35,14 +36,15 @@ public:
     
     // Check if changed
     uint8_t count = min(MAX_VALUES, len);
-    bool match = true;
     // Check and copy
     for(uint8_t i=0; i<count; i++) {
       if(buf[i] != lastReportedValues[i]) {
-        match = false;
         lastReportedValues[i] = buf[i];
       }
+//      Serial.print(buf[i]);
+//      Serial.print(F(", "));
     }
+//     Serial.println();
 
     // Suppress for some time (1s)
     unsigned long time = millis();
@@ -57,7 +59,7 @@ public:
     //Serial.println(joystickButtonChanged);
     
     // Values changed. Check if "button press"
-    for(uint8_t i=0; i<count; i++) {
+    for(uint8_t i=startIndex; i<count; i++) {
       if(idleValues[i] != lastReportedValues[i]) {
         // Some button was pressed.
         joystickButtonPressed = true;
