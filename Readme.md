@@ -265,8 +265,8 @@ Assuming that you have the Arduino IDE, just install the library USB Host Shield
 ![](<<picture of Start-Screen "LagMeter">>)
 
 The LagMeter uses 5 different buttons. Each button offers a different test:
-- **"Test Button"**: Will simply output the value measured at the photo resistor. At the same time a button press/release is stimulated at a frequency of approx. 1s. This is to check that the photo resistor is working and to check the values when button is pressed and released.
-- **"Total Monitor Lag"**: It starts with a short calibration phase. During calibration the button is pressed for a second and the monitor output, i.e. the photo transistor value is read. 
+- **"Button ON/OFF"**: Will simply output the value measured at the photo resistor. At the same time a button press/release is stimulated at a frequency of approx. 1s. This is to check that the photo resistor is working and to check the values when button is pressed and released.
+- **"Test: Button -> Photosensor" (Total Monitor Lag)**: It starts with a short calibration phase. During calibration the button is pressed for a second and the monitor output, i.e. the photo transistor value is read. 
 Then the button is released and the photo transistor value is read again.
 Afterwards 100 measurement cycles are done with button presses and releases. For each button press the time is measured until an action occurred on the screen.
 At the end the minimum, maximum and average time is shown.
@@ -274,8 +274,8 @@ If a measurement takes too long (approx 4 secs) an error is shown.
 You need a program that reacts on game controller button presses. E.g. jstest-gtk in Linux. The photo sensor need to be arranged just above the (small) screen area that changes when the button is pressed.
 For the tests with the emulator you can use the ZX Spectrum program (sna-file) in this repository. It reads the (ZX Spectrum) keyboard and toggles the screen (e.g. black/white). 
 In the emulator you need to map the game controller button to the "0" Spectrum key.
-- **"Total SVGA Lag"**: Same as "Total Monitor Lag" but instead of measuring the photo transitor it monitors the SVGA output of the PC. I.e. as a result you get the lag without the monitor.
-- **"Monitor Lag"**: This measures the monitor lag itself. For this you need to connect all cables: Game controller button, photo transitor (at monitor) and SVGA at the SVGA output ofthe PC (because the monitor is connected as well you need a Y-SVGA adapter to connect both at the same time).
+- **"Test: Button -> AD2 (eg.SVGA)" (Total SVGA Lag)**: Same as "Total Monitor Lag" but instead of measuring the photo transitor it monitors the SVGA output of the PC. I.e. as a result you get the lag without the monitor.
+- **"Test: SVGA -> Photosensor" (Monitor Lag)**: This measures the monitor lag itself. For this you need to connect all cables: Game controller button, photo transitor (at monitor) and SVGA at the SVGA output ofthe PC (because the monitor is connected as well you need a Y-SVGA adapter to connect both at the same time).
 Please note: monitor manufacturers have very sophisticated ways to measure the latency. The way used here is very simple, so the results may differ from your monitor's specification.
 - **"Minimum Button Press Time/Reliability Test"**: It measures the minimumt time required to press the game controller's button so that it is reliably recognized. Because of polling intervals (see above) it can happen that a button press is not recognized at all if it is too short. This test measures the time and the number of button presses for a certain button press time. Whenever a button press doesn't lead to a visual response the minimum press time is increased andthe test starts all over again.
 The test will run "forever", i.e. you can leave it running for a day to see if your system really catches all button presses. Or to put in another way: the tests shows you how long you have to press the button at a minimum so that it is reliably recognized.
@@ -294,15 +294,15 @@ You can interrupt all measurements by pressing any key.
 
 ![](<<picture of Start-Screen "UsblagLCD">>)
 
-The UsblagLcd uses 2 different buttons with different tests:
-- **"Test Button"**: Will toggle between button press/release at a frequency of approx. 1s. You should see the LCD display changing when a game controller's button is pressed. 
+The UsblagLcd uses 3 different buttons with different tests:
+- **"Button: ON/OFF"**: Will toggle between button press/release at a frequency of approx. 1s. You should see the LCD display changing when a game controller's button is pressed. 
 For a simple test you can attach your game controller and press the buttons manually. You should see the LCD display changing.
 Then you can open your game controller and attach the cables to a button to simulate button presses. If this works you see the LCD display changing at the toggle frequency.
-- **"Game Controller Lag"**: Measures the lag of the game controller, i.e. from button press to USB response.
-Conenct the button of your game controller with the cable and start the test.
+- **"Test: USB ?ms" (Game Controller Lag)**: Measures the lag of the game controller, i.e. from button press to USB response.
+Connect the button of your game controller with the cable and start the test.
 It does 100 cycles and shows the minimum, maximum and average time used by the controller.
-The test always uses a USB polling rate of 1ms.
-Note: The original usblag project used 1000 cycles. I reduced this to 100 to get faster results.
+The test uses the USB polling rate requested by the USB controller. The used polling rate is displayed.
+- **"Test: USB 1ms" (Game Controller Lag)**: Same as before but this test uses a fixed polling rate of 1 ms. Not available for XBOX controller.
 
 You can interrupt all measurements by pressing any key.
 
@@ -370,8 +370,7 @@ Video comparing zero delay vs. Arduino encoder. zero delay is lagging.
 
 # License
 
-The SW includes sources from [usblag](https://gitlab.com/loic.petit/usblag) by Loïc Petit which are under MIT License.
+These sources contain modified code from the [USB Host Shield Library 2.0](https://github.com/felis/USB_Host_Shield_2.0). This code is in the src/usb directory. The original code is GPL2. Thus also the modifed code is GPL2.
 
-These sources contain code from the [USB Host Shield Library 2.0](https://github.com/felis/USB_Host_Shield_2.0) which are under GPL2 license.
+The rest of the sources alone (without src/usb directory) is under MIT Licence. So the complete SW in a whole is GPL2 because of copyleft.
 
-The rest of the sources are under MIT Licence.

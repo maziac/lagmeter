@@ -10,7 +10,8 @@
 - EIZO-DVI:	EIZO with DVI signal connected
 - Button:	
     - Zero Delay USB Encoder, Dragon Rise Inc.
-    - Or Teensy FastestJoystick, see my other project here](http://www.github.com/FastestJoystick)
+    - or Teensy FastestJoystick, see my other project here](http://www.github.com/FastestJoystick)
+    - or various tested joysticks
 
 ### Monitors:
 
@@ -96,7 +97,8 @@ See also [spreadsheet](Docs/LagMeasurements.ods).
 ## Joysticks
 
 With FastestJoystick it could be seen that the OS response time is about 1-3ms.
-FastestJoystick allows also a digital output. So this output can be used to measure the other joysticks more accurate. 
+FastestJoystick (in former releases) also allowed digital output. So this output can be used to measure the other joysticks more accurate. 
+Note: I have meanwhile separated the output part into a new project. So if one would like to re-test he could use [usbout](https://github.com/maziac/usbout).
 
 
 Setup:
@@ -111,7 +113,7 @@ With the LagMeter and the digital output connected to the AD2 input (AD2 input i
 
 ### Joystick Minimum Button Press Time
 
-This measures the minimum time required to press a button so that it is safely recognized by the system (just OS without emulator.
+This measures the minimum time required to press a button so that it is safely recognized by the system (just OS without emulator).
 
 
 #### FastestJoystick (Teensy)
@@ -191,6 +193,8 @@ Delay measurement (100 cycles): 2-31 ms
 
 Delay measurement (100 cycles): 4-47 ms
 
+![](Images/LagMeter_Microntek.jpg)
+
 
 #### Ultimarc Ultrastik 360
 
@@ -229,6 +233,71 @@ Note: when added a USB 2.0 hub the (1ms poll) measurements are very much the sam
 #### Microsoft X-Box 360 pad (black)
 
 Delay measurement (100 cycles): 4-14 ms
+
+
+
+
+### Joystick turnaround time (lag)
+
+Here also he delay is measured from button press until a response.
+The setup is much easier.
+The joystick is simply attached to the Arduino USB Host Shield.
+One of the joystick's buttons is stimulated by the LagMeter.
+The Host shield will poll the joystick, press the button and measure the time until it receives a response (button press) from the joystick.
+
+Note: for the measurements the poll time requested by the joystick device was used.
+
+
+#### FastestJoystick (Teensy)
+
+100 cycles: 2-3ms
+
+![](Images/LagMeter_FastestJoystick.jpg)
+
+
+#### Buffalo Gamepad
+
+Was destroyed (i.e. HW changed to Teensy) at that time.
+
+
+#### DragonRise Inc. Generic USB joystick, Zero Delay (Yellow PCB)
+
+100 cycles: 1-31ms
+
+![](Images/LagMeter_DragonRise.jpg)
+
+
+#### Microntek USB Joystick (Green PCB)
+
+Delay measurement (100 cycles): 5-48 ms
+
+![](Images/LagMeter_Microntek.jpg)
+
+
+
+#### Ultimarc Ultrastik 360
+
+Delay measurement (100 cycles): 2-4 ms
+
+![](Images/LagMeter_Ultistik360_1ms.jpg)
+
+Note: This was done with the special firmware with requested 1ms poll time.
+
+
+
+#### Microsoft X-Box 360 pad (white)
+
+Attention: Here another xbox controller, a white one, was used.
+
+Delay measurement (100 cycles): 1-2 ms
+
+![](Images/LagMeter_xbox.jpg)
+
+This was the best result I could measure. Interesting enough this was the **cheaper** of the 2 xbox controllers.
+
+I soldered a cable inside the controller in order not to have to open it everytime I want to do a measurement:
+![](Images/xbox_controller_modified.jpg)
+
 
 
 ## OS
@@ -303,24 +372,27 @@ Very bad is the variance in the delay which could be seen in the Zero Delay USB 
 This is not really usable.
 
 The Buffalo Gamepad was a surprise. It had a very low delay of 1ms. Unfortunately it uses a polling rate of 8ms so the total delay results in 1-9ms.
-Anyhow it would be a good result but unfortunately the Buffalo Controller is reported for its ghosting and yes, also my Buffalo has ghosting:
+Anyhow it would be a good result but unfortunately the Buffalo Controller is reported for its ghosting and yes, also my Buffalo had ghosting:
 The left direction is "pressed" quite often (5x in 10mins), the right direction about 1x in 10mins.
 
-As expected the XBox Controller have a good value of 4-14ms. Although it is not extraordinary good.
+The XBox controllers do not give a unique picture.
+One device (black) had 4-14ms lag. This is OK but not really good.
+The other (the white one) was the winner with only 1-2ms delay. Interesting enough this was the cheaper of the 2 xbox controllers.
 
-The Ultrastik 360 is OK with 8-17ms. Although I decided for myself that because its already in the range of a frame I will exchange it againt another joystick.
-
-Because if these results I started to write my own USB game controller firmware which can be found [here](http://www.github.com/FastestJoystick).
-With this USB encoder the best results can be achieved: 3-5ms.
-
-Note: from all these results 1-2ms have to be removed for the USB output.
+The original Ultrastik 360 is OK with 8-17ms but not really good. But I discussed with Andy from Ultimarc and got a special firmware that requested a 1ms poll time only.
+With this special firmware the response lag dropped down to 2-4ms which is really good.
 
 
-# Conclusions for My Cabinet
 
-1. The Zero Delay encoder and the Ultrastik are replaced by a leaf-switch joystick and the Teensy FastestJoystick encoder. This saves about 26ms at max. and the about the same in variance.
+# Conclusions for my Arcade Cabinet
+
+1. Joysticks:
+    - I had used the "Zero Delay USB Encoder, Dragon Rise Inc." for the buttons. This was removed completely. The measurements showed that the lag and the variation in lag are not usable for a joystick. At max. this USB encoder could lead to 2 frames lag.
+    - Main joystick: With the special 1ms firmware the Ultrastik 360 joystick is nearly as fast as my other project, the FastestJoystick. So the Ultrastik is an excellent choice now for my cabinet. 
+    - The 2nd joystick: I had used a Buffalo as a 2nd attachable joystick (for 2 player games). This has been replaced by the FastestJoystick Teensy.
 2. Monitor: The Eizo introduces a delay of 1.5 frames delay which is far too big. This monitor needs to be exchanged. 
 
 I started with a delay of 96-153ms for the whole system.
 Now (without monitor) I'm at 35-71ms. I have to buy a new (fast) monitor then I hope that I can reduce the original delay by about 50%.
+
 
