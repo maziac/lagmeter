@@ -60,10 +60,10 @@ Note: the numbers in brackets are the requested polling times. The real polling 
 - jstest:	Jstest-gtk. Joystick tester v0.1.0
 
 
-## Linux USB polling rates
+## A note about Linux USB polling rates
 
 Most of the joysticks requested a polling rate of 10ms.
-I try to convince Linux to use 1ms instead but without success.
+I tried to convince Linux to use 1ms instead but without success.
 I was also not able to change the mouse polling rate.
 Here is what I tried.
 
@@ -76,7 +76,7 @@ I have tried:
 - Setting usbhid.mousepoll=8 on the command line while booting
 - Running sudo modprobe -r usbhid && sudo modprobe usbhid mousepoll=1 (or jspoll=1) from the command line
 
-Problem exactly like [here](https://askubuntu.com/questions/624075/how-do-i-set-the-usb-polling-rate-correctly-for-my-logitech-mouse).
+The problem is exactly like this [here](https://askubuntu.com/questions/624075/how-do-i-set-the-usb-polling-rate-correctly-for-my-logitech-mouse).
 
 'evhz' results:
 - Ultimarc: 90Hz
@@ -84,7 +84,7 @@ Problem exactly like [here](https://askubuntu.com/questions/624075/how-do-i-set-
 - DragonRise: 115Hz
 
 
-Note: when using the teensy as joystick with a requested poll interval of 1ms the Linux is using the 1ms poll interval. Also evhz is showing 1000Hz (but it's important to use the joystick coordinated, e.g. Joystick.X(analogRead(0)), otherwise evhz will not find any event.)
+Note: when using the teensy as joystick with a requested poll interval of 1ms the Linux is using the 1ms poll interval. Also evhz is showing 1000Hz (but it's important to use the joystick coordinates, e.g. Joystick.X(analogRead(0)), otherwise evhz will not find any event.)
 
 Note: I tested all USB ports of the NUC. All with the same result.
 
@@ -292,7 +292,7 @@ Delay measurement (100 cycles): 1-2 ms
 
 ![](Images/LagMeter_xbox.jpg)
 
-This was the best result I could measure. Interesting enough this was the **cheaper** of the 2 xbox controllers.
+This was the best result of all joysticks. Interesting enough this was the **cheaper** of the 2 xbox controllers.
 
 I soldered a cable inside the controller in order not to have to open it everytime I want to do a measurement:
 ![](Images/xbox_controller_modified.jpg)
