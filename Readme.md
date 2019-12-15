@@ -220,18 +220,26 @@ So, even if you see that there is only one frame delay when single stepping the 
 
 ![](HW/LagMeter_TinkerCad.jpg)
 
-Note: You don't need to wire the LCD and buttons if you use the LCD Keypad shield. It already contains the buttons and teh correct connections.
+Note 1: You don't need to wire the LCD and buttons if you use the LCD Keypad shield. It already contains the buttons and the correct connections.
+
+Note 2: I had trouble with the contrat of the HD44780 1602 lcd Display. It turned out that the contrast became much better after I put a resistor (100 Ohm) in the +5V poer connection of the LCD. 
+I found this tweak here: https://forum.arduino.cc/index.php?topic=337502.msg4248679#msg4248679
+Maybe you need to play around with the values a little bit.
+
 
 
 ## Components List
 
 - Arduino Uno R3
-- LCD Keypad Shield
 - Reed Relais SIL 7271-D 5V
 - Phototransistor BPX 38-3 OSO
 - R=470k
 - USB Host Shield v2.0
+- HD44780 LCD Module Display (without I2C)
+- 5x buttons
+- Resistors: 330, 620, 1k, 2k2, 3k3
 
+Note: Instead of the LCD Module, the buttons and the resistors you could also use a LCD Keypad Shield.
 
 
 # SW

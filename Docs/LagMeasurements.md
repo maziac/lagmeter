@@ -57,7 +57,7 @@ Note: the numbers in brackets are the requested polling times. The real polling 
 - Linux:	Kernel 4.15.0, Ubuntu 16.04.1
 - Windows:	Windows 10
 - MAME/MESS:	v0.155
-- jstest:	Jstest-gtk. Joystick tester v0.1.0
+- jstest:	jstest-gtk. Joystick tester v0.1.0
 
 
 ## A note about Linux USB polling rates
