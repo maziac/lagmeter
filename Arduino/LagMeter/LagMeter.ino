@@ -44,7 +44,7 @@ However it was tested only with a 16MHz CPU.
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "1.0"
+#define SW_VERSION "1.1"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
@@ -53,12 +53,12 @@ However it was tested only with a 16MHz CPU.
 // Define used Keys.
 // Lagmeter:
 const int KEY_TEST_PHOTO_BUTTON = LCD_KEY_SELECT;
-const int KEY_MEASURE_PHOTO = LCD_KEY_DOWN;
+const int KEY_MEASURE_PHOTO = LCD_KEY_LEFT;
 const int KEY_MEASURE_SVGA = LCD_KEY_UP;
-const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_RIGHT;
-const int KEY_MEASURE_MIN_TIME = LCD_KEY_LEFT;
+const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_DOWN;
+const int KEY_MEASURE_MIN_TIME = LCD_KEY_RIGHT;
 // usblag:
-const int KEY_USBLAG_MEASURE     = LCD_KEY_DOWN;
+const int KEY_USBLAG_MEASURE     = LCD_KEY_LEFT;
 const int KEY_USBLAG_MEASURE_1MS = LCD_KEY_UP;
 const int KEY_USBLAG_TEST_BUTTON = LCD_KEY_SELECT;
 
