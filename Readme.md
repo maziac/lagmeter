@@ -56,7 +56,7 @@ There are at least:
 Note: Of course you could increase the frame rate to lower the interval/lower the latency. The problem is that if you use another frame rate than the source (i.e. the emulator) you may encounter other visual artefacts.
 
 The picture below tries to visualize the effect of the polling:
-![](Images/wavedrom_polling_1.jpg)
+![](Docs/Images/Readme/wavedrom_polling_1.jpg)
 <!--
 ~~~wavedrom
 {signal: [
@@ -118,7 +118,7 @@ I.e. already with these small value we end up with a jitter of 5ms to 43ms for a
 But that is just the path to the emulator game controller input.
 
 The full path needs to draw and display something on the monitor:
-![](Images/wavedrom_polling_1.jpg)
+![](Docs/Images/Readme/wavedrom_polling_1.jpg)
 <!--
 ~~~wavedrom
 {signal: [
@@ -318,7 +318,7 @@ I did a few tests to validate the measured times.
 
 Measurements with oscilloscope:
 - Switch bouncing is less than 40us
-![](Images/button_reed_relais_press.BMP)
+![](Docs/Images/Readme/button_reed_relais_press.BMP)
 - Delay: 5V Out to relais switching: < 250us
 
 Both together are << 1ms.
@@ -330,15 +330,15 @@ Both together are << 1ms.
 Response time (cyan is the compare-digital-out, starts with button, ends when photo sensor range is met):
 
 - Photosensor (yellow) attached to EIZO monitor:
-![](Images/photo_sensor_following_comp_out_EIZO.BMP)
+![](Docs/Images/Readme/photo_sensor_following_comp_out_EIZO.BMP)
 Time from dark to bright is around 10-15ms, this might be due to the monitor requiring some time to fully light the area.
 
 - Photosensor (yellow) attached to BenQ monitor:
-![](Images/photo_sensor_following_comp_out_BENQ.BMP)
+![](Docs/Images/Readme/photo_sensor_following_comp_out_BENQ.BMP)
 Time from dark to bright here is also  around 10-15ms. What can be seen as well is that the overall response time for the BenQ is much shorter.
 
 - Photosensor (yellow) attached simply to an (inverted) LED:
-![](Images/photo_sensor_following_comp_out_LED.BMP)
+![](Docs/Images/Readme/photo_sensor_following_comp_out_LED.BMP)
 Response is very fast, within 0.5ms.
 
 The code to measure the lag has a check to test that the time between 2 measurements does not become bigger than 1ms. In that case it would show an error in the display.
@@ -350,7 +350,7 @@ I put an LED to the relais. The LED emitted light into the photo sensor.
 This is the fastest feedback that could be measured. With the accuracy considerations above the overall lag should be max. 1ms.
 
 Here is the result for 100 test cycles:
-![](Images/direct_LED_feedback.jpg)
+![](Docs/Images/Readme/direct_LED_feedback.jpg)
 
 
 

@@ -193,7 +193,7 @@ Delay measurement (100 cycles): 2-31 ms
 
 Delay measurement (100 cycles): 4-47 ms
 
-![](Images/LagMeter_Microntek.jpg)
+![](Images/Measurements/LagMeter_Microntek.jpg)
 
 
 #### Ultimarc Ultrastik 360
@@ -215,10 +215,10 @@ I also tested the Ultrastik_37_analogueout.ufw firmware which doesn't work as an
 This showed that the AD/DA conversion is fast enough.
 
 The picture shows the moving of the joystick from center to e.g. "up". This was carried out manually and I could achieve this in about 10 ms. You can see this from the voltage which reaches its maximum after 10 ms.
-![](../Images/ustik360_analog_out_speed1.BMP)
+![](../Images/Measurements/ustik360_analog_out_speed1.BMP)
 
 When we increase the resolution we can also see the staircase pattern of the AD/DA conversion:
-![](../Images/ustik360_analog_out_speed2.BMP)
+![](../Images/Measurements/ustik360_analog_out_speed2.BMP)
 So I think it's safe to assume that the UStik360 internally requires 0.5 ms for an AD/DA conversion. That's fine.
 
 
@@ -252,7 +252,7 @@ Note: for the measurements the poll time requested by the joystick device was us
 
 100 cycles: 2-3ms
 
-![](Images/LagMeter_FastestJoystick.jpg)
+![](Images/Measurements/LagMeter_FastestJoystick.jpg)
 
 
 #### Buffalo Gamepad
@@ -264,21 +264,21 @@ Was destroyed (i.e. HW changed to Teensy) at that time.
 
 100 cycles: 3-30ms
 
-![](Images/LagMeter_DragonRise.jpg)
+![](Images/Measurements/LagMeter_DragonRise.jpg)
 
 
 #### Microntek USB Joystick (Green PCB)
 
 Delay measurement (100 cycles): 5-48 ms
 
-![](Images/LagMeter_Microntek.jpg)
+![](Images/Measurements/LagMeter_Microntek.jpg)
 
 
 #### Ultimarc Ultrastik 360
 
 Delay measurement (100 cycles): 2-4 ms
 
-![](Images/LagMeter_Ultistik360_1ms.jpg)
+![](Images/Measurements/LagMeter_Ultistik360_1ms.jpg)
 
 Note: This was done with the special firmware with requested 1ms poll time.
 
@@ -290,12 +290,12 @@ Attention: Here another xbox controller, a white one, was used.
 
 Delay measurement (100 cycles): 1-2 ms
 
-![](Images/LagMeter_xbox.jpg)
+![](Images/Measurements/LagMeter_xbox.jpg)
 
 This was the best result of all joysticks. Interesting enough this was the **cheaper** of the 2 xbox controllers.
 
 I soldered a cable inside the controller in order not to have to open it everytime I want to do a measurement:
-![](Images/xbox_controller_modified.jpg)
+![](Images/Measurements/xbox_controller_modified.jpg)
 
 
 
