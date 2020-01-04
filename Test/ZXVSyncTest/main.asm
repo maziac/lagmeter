@@ -11,6 +11,9 @@ PORT_BORDER:    equ 0x00FE
 ; The VSync frequency
 VSYNC_FREQ:     equ 50
 
+; ROM routines
+ROM_PRINT_CHAR: equ 6683
+ROM_PRINT_STRING:   equ 8252
 
     ORG 0x8000
  
@@ -35,7 +38,6 @@ main:
  
     ; Setup stack
     ld sp,stack_top
-
  
     ; CLS
     call clear_screen
@@ -44,6 +46,15 @@ main:
     ld a,BLACK
     out (c),a
     
+    ; Print toe upper screen
+    ld a,2
+    call 5633
+
+    ; Set INK and PAPER for output
+    ld de,black_on_white
+    ld bc,black_on_white.end-black_on_white
+    call ROM_PRINT_STRING 
+
     ; Enable VSync Interrupt
     ei
 
@@ -54,7 +65,7 @@ main_loop:
     ; Remove the bar
     ld a,(bar_position)
     ld l,a
-    xor a
+    ld a,WHITE
     call show_bar
 
     ; Move the bar
@@ -87,7 +98,7 @@ main_loop:
 
 .no_min:
     ; Show time
-    ;call print_time
+    call print_time
 
 .no_sec:
     jr main_loop
@@ -108,12 +119,15 @@ show_bar:
 
 ; Prints the time in the upper left corner.
 print_time:
-    ; Print AT 0,0
+    ; Print AT 0,0    
+    ld de,at00
+    ld bc,at00.end-at00
+    call ROM_PRINT_STRING
     ; Show the time
     ld hl,secs_counter
     ld b,0
     ld c,(hl)
-    call 6683   ; Display the number
+    call ROM_PRINT_CHAR   ; Display the number
     ; Print a space
     ld a,' '
     rst 16
@@ -128,7 +142,13 @@ frame_counter:  defb 1
 ; Counts each second up to 60
 secs_counter:   defb 57     ; Starts a few secs before the first turnaround
 
+; Print AT 0,0
+at00:   defb 22, 0, 0
+.end:
 
+; Print black on white
+black_on_white: defb 16, WHITE,  17, BLACK
+.end:
 
 
 ;===========================================================================
@@ -136,13 +156,15 @@ secs_counter:   defb 57     ; Starts a few secs before the first turnaround
 ;===========================================================================
 
 ; Stack: this area is reserved for the stack
-STACK_SIZE: equ 10    ; in words
+STACK_SIZE: equ 100    ; in words
 
 
 ; Reserve stack space
 stack_bottom:
+    defw    0   ; WPMEM, 2
     defs    STACK_SIZE*2, 0
-stack_top:  defb 0  ; WPMEM
+stack_top:  
+    defw 0  ; WPMEM, 2
 
 
 

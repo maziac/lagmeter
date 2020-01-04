@@ -11,16 +11,24 @@
             "zhostname": "localhost",
             "zport": 10000,
             "listFiles": [
+                /*
+                {
+                    "path": "rom48.list",
+                    "asm": "z80asm",
+                    "srcDirs": [],
+                },
+                */ 
                 {
                     "path": "zxvsynctest.list",
-                    "useFiles": true,
                     "asm": "sjasmplus",
-                    "mainFile": "main.asm"
-                }
+                    "mainFile": "main.asm",
+                    "srcDirs": [""],
+                }, 
             ],
-            "startAutomatically": true,
-            "skipInterrupt": true,
+            "startAutomatically": false,
+            "skipInterrupt": false,
             "commandsAfterLaunch": [
+                "-wpmem enable",
             ],
             "disassemblerArgs": {
                 "esxdosRst": true
