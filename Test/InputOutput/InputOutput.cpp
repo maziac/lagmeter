@@ -20,10 +20,7 @@
  * The idea is just to test/measure the turnaround times.
  * 
  * Notes:
- * To access the serial port on linux as normal user you need to give access rights with:
- * sudo usermod -a -G dialout <user>
- * (Maybe also: sudo usermod -a -G plugdev <user>)
- * and then reboot.
+ * To access the serial port on linux as normal user you need the teensy udev rules.
  * 
  * 
  */
@@ -116,7 +113,7 @@ size_t get_axis_state(struct js_event *event, struct axis_state axes[3])
 // on: true/or false. On or off.
 void write_dout(int fd, int dout, bool on) {
     char buffer[100];
-    sprintf(buffer, "o%d=%d\n", dout, on? 1 : 0);
+    sprintf(buffer, "o%d=%d\n", dout, on? 100 : 0);
     printf("%s", buffer);
     int len = strlen(buffer); 
     ssize_t result = write(fd, buffer, len);
