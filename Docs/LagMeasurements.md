@@ -382,6 +382,11 @@ The original Ultrastik 360 is OK with 8-17ms but not really good. But I discusse
 With this special firmware the response lag dropped down to 2-4ms which is really good.
 
 
+## Monitor
+
+To avoid tearing, waitvsync=1 has to be turned on in mame and mess.
+The BenQ monitor is faster than the EIZO. At least 1 frame.
+
 
 # Conclusions for my Arcade Cabinet
 
