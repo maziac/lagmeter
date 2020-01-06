@@ -28,7 +28,7 @@ int getLcdKey() {
     return LCD_KEY_UP;
   if (x < 400) 
     return LCD_KEY_DOWN;
-  if (x < 600) 
+  if (x < 650) 
     return LCD_KEY_LEFT;
   return LCD_KEY_SELECT;
 }
