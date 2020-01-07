@@ -101,6 +101,10 @@ no_color_change:
 black:
     ; Clear background
     call clear_backg
+    ; Border color
+    ld bc,PORT_BORDER
+    ld a,BLACK
+    out (c),a
     jr main_loop
 
 
@@ -118,6 +122,10 @@ set_backg_paper_color:
     ld bc,COLOR_SCREEN_SIZE
     ld hl,COLOR_SCREEN
     call fill_memory
+    ; Border color
+    ld bc,PORT_BORDER
+    ld a,(last_color)
+    out (c),a
     ret	
 
 
