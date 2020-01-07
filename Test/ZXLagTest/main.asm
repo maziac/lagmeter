@@ -99,17 +99,21 @@ no_color_change:
     jr main_loop
 
 black:
-    ; Clear background
-    call clear_backg
     ; Border color
     ld bc,PORT_BORDER
     ld a,BLACK
     out (c),a
+    ; Clear background
+    call clear_backg
     jr main_loop
 
 
 ; Sets the background paper color.
 set_backg_paper_color:
+    ; Border color
+    ld bc,PORT_BORDER
+    ld a,(last_color)
+    out (c),a
     ; load color
     ld a,(last_color)
     ; Convert color to paper color
@@ -122,10 +126,6 @@ set_backg_paper_color:
     ld bc,COLOR_SCREEN_SIZE
     ld hl,COLOR_SCREEN
     call fill_memory
-    ; Border color
-    ld bc,PORT_BORDER
-    ld a,(last_color)
-    out (c),a
     ret	
 
 
