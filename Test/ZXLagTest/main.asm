@@ -15,6 +15,13 @@ PORT_BORDER:    equ 0x00FE
 
     ORG 0x8000
  
+; Set this to 1 if the border should be changed as well with the screen content.
+; Note: For some reason the border is changed later than the screen content.
+; I.e. it can be seen that the screen content is changed, then a few moments later 
+; the border changes. 
+; It is implemented exactly the otehr way: first the border is changed, then the screen content.
+; Most probably a problem due to the emulation.
+CHANGE_BORDER:  equ 0
 
 
 ;===========================================================================
@@ -99,10 +106,12 @@ no_color_change:
     jr main_loop
 
 black:
+  IF CHANGE_BORDER
     ; Border color
     ld bc,PORT_BORDER
     ld a,BLACK
     out (c),a
+  ENDIF
     ; Clear background
     call clear_backg
     jr main_loop
@@ -110,10 +119,12 @@ black:
 
 ; Sets the background paper color.
 set_backg_paper_color:
+  IF CHANGE_BORDER
     ; Border color
     ld bc,PORT_BORDER
     ld a,(last_color)
     out (c),a
+  ENDIF
     ; load color
     ld a,(last_color)
     ; Convert color to paper color
