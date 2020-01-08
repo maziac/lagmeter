@@ -15,6 +15,18 @@ VSYNC_FREQ:     equ 50
 ROM_PRINT_CHAR: equ 6683
 ROM_PRINT_STRING:   equ 8252
 
+
+
+; Set to one to show a bar (COLOR Screen)
+SHOW_VERT_BAR:   equ 0
+
+; Set to one to show a thin vertical line
+SHOW_VERT_LINE: equ 1
+
+; The increment for the line x-position (at least 2)
+LINE_X_INC:     equ 2
+
+
     ORG 0x8000
  
 
@@ -41,12 +53,13 @@ main:
  
     ; CLS
     call clear_screen
-    call clear_backg
+    ld a,WHITE
+    call set_backg
     ld bc,PORT_BORDER
     ld a,BLACK
     out (c),a
     
-    ; Print toe upper screen
+    ; Print to upper screen
     ld a,2
     call 5633
 
@@ -55,6 +68,12 @@ main:
     ld bc,black_on_white.end-black_on_white
     call ROM_PRINT_STRING 
 
+  IF SHOW_VERT_LINE
+    ; Remove the line
+    ld a,(line_position)
+    call show_line_xor
+  ENDIF
+ 
     ; Enable VSync Interrupt
     ei
 
@@ -62,6 +81,22 @@ main_loop:
     ; Wait on VSync
     halt
 
+  IF SHOW_VERT_LINE
+    ; Remove the line
+    ld a,(line_position)
+    call show_line_xor
+
+    ; Move the line
+    ld a,(line_position)
+    add a,LINE_X_INC
+    ld (line_position),a
+
+    ; Show line
+    call show_line_xor
+  ENDIF
+
+
+  IF SHOW_VERT_BAR
     ; Remove the bar
     ld a,(bar_position)
     ld l,a
@@ -78,6 +113,8 @@ main_loop:
     ld l,a
     ld a,WHITE<<3
     call show_bar
+  ENDIF
+
 
     ; Increase counter
     ld hl,frame_counter
@@ -117,6 +154,37 @@ show_bar:
     djnz .loop
     ret
 
+
+; Shows a vertical line.
+; a = color (paper color)
+; a = column [0;31]
+show_line_xor:
+    ; Calculate bit
+    ld l,a
+    and 07h
+    ld b,a
+    inc b
+    ld a,01b
+.rotate:
+    rrca
+    djnz .rotate
+    ld c,a
+
+    ; get byte fro, x postion
+    srl l : srl l : srl l
+
+    ld h,high SCREEN
+    ld b,192    ; height
+    ld de,32    ; 1 line
+.loop:
+    ld a,(hl)
+    xor c
+    ld (hl),a
+    add hl,de
+    djnz .loop
+    ret
+
+
 ; Prints the time in the upper left corner.
 print_time:
     ; Print AT 0,0    
@@ -135,6 +203,9 @@ print_time:
 
 ; The column the bar is shown.
 bar_position:   defb 0
+
+; The x-position the line is shown.
+line_position:   defb 0
 
 ; Counts each frame down from 60
 frame_counter:  defb 1
