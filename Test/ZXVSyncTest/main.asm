@@ -24,7 +24,7 @@ SHOW_VERT_BAR:   equ 0
 SHOW_VERT_LINE: equ 1
 
 ; The increment for the line x-position (at least 2)
-LINE_X_INC:     equ 2
+LINE_X_INC:     equ 4
 
 
     ORG 0x8000
