@@ -1,0 +1,16 @@
+<!-- zxlagtest.lay -->
+
+<mamelayout version="2">
+
+	<view name="Rotated">
+		<bounds x="0" y="0" width="16000" height="9000" />
+		<screen index="0">
+			<bounds x="5000" y="1000" width="9300" height="7000" />
+			<orientation rotate="90" />
+		</screen>
+
+	</view>
+
+</mamelayout>
+
+
