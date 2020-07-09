@@ -252,10 +252,10 @@ There are 2 main functionalities implemented:
 
 
 The device starts up in the LagMeter mode and stays there.
-![](<<picture of Start-Screen "LagMeter">>)
+![](Docs/Images/Readme/start_screen_lag.jpg)
 
 To change to UsblagLCD mode you need to attach an USB game controller. If it is recognized the display changes:
-![](<<picture of Start-Screen "UsblagLCD">>)
+![](Docs/Images/Readme/start_screen_usb.jpg))
 
 Note: the UsblagLCD mode cannot be left automatically, you need to press reset to get back to the LagMeter mode.
 
@@ -265,7 +265,7 @@ Assuming that you have the Arduino IDE, just install the library USB Host Shield
 
 ### LagMeter 
 
-![](<<picture of Start-Screen "LagMeter">>)
+![](Docs/Images/Readme/start_and_buttons.jpg)
 
 The LagMeter uses 5 different buttons. Each button offers a different test:
 - **"Button ON/OFF"**: Will simply output the value measured at the photo resistor. At the same time a button press/release is stimulated at a frequency of approx. 1s. This is to check that the photo resistor is working and to check the values when button is pressed and released.
@@ -295,7 +295,7 @@ You can interrupt all measurements by pressing any key.
 
 ### UsblagLcd
 
-![](<<picture of Start-Screen "UsblagLCD">>)
+![](Docs/Images/Readme/start_screen_usb.jpg))
 
 The UsblagLcd uses 3 different buttons with different tests:
 - **"Button: ON/OFF"**: Will toggle between button press/release at a frequency of approx. 1s. You should see the LCD display changing when a game controller's button is pressed. 

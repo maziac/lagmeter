@@ -388,6 +388,17 @@ To avoid tearing, waitvsync=1 has to be turned on in mame and mess.
 The BenQ monitor is faster than the EIZO. At least 1 frame.
 
 
+## Raspberry Pi 4, Retropie/Retroarch
+
+The RP4 with retropie uses no X. I thought it might outperform the NUC in regards to lag.
+The results were not so good. Total lag is about 2-3 frames higher. Or, lag is nearly double as high. The variance (min to max) is about the same, so maybe this depends on the emulator.
+
+Measurements were done with lr-mame2003.
+
+I didn't check the usb polling. And mybe it is also possible to get better results by connecting the joystick to the GPIOs.
+But I don't expect any significant improvements compared to the NUC.
+
+
 # Conclusions for my Arcade Cabinet
 
 1. Joysticks:
@@ -395,8 +406,9 @@ The BenQ monitor is faster than the EIZO. At least 1 frame.
     - Main joystick: With the special 1ms firmware the Ultrastik 360 joystick is nearly as fast as my other project, the FastestJoystick. So the Ultrastik is an excellent choice now for my cabinet. 
     - The 2nd joystick: I had used a Buffalo as a 2nd attachable joystick (for 2 player games). This has been replaced by the FastestJoystick Teensy.
 2. Monitor: The Eizo introduces a delay of 1.5 frames delay which is far too big. This monitor needs to be exchanged. 
+3. NUC vs Raspi: Clear win for the NUC. No need to change the HW.
 
 I started with a delay of 96-153ms for the whole system.
-Now (without monitor) I'm at 35-71ms. I have to buy a new (fast) monitor then I hope that I can reduce the original delay by about 50%.
+Now (with a new monitor, AOC-HDMI, and better joysticks) I'm at 39-74ms. I could reduce the original delay by about 50%.
 
 
