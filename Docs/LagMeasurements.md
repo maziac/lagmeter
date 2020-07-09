@@ -399,6 +399,13 @@ I didn't check the usb polling. And mybe it is also possible to get better resul
 But I don't expect any significant improvements compared to the NUC.
 
 
+### Run-ahead
+
+Turning on run-ahead with 1 frame didn't change the result.
+Using 2 frames resulted in a lag decrease of roughly 1 frame.
+Furthing increasing the frames didn't improve the lag. Most probably the system became too slow to see an improvement.
+
+
 # Conclusions for my Arcade Cabinet
 
 1. Joysticks:
@@ -406,7 +413,8 @@ But I don't expect any significant improvements compared to the NUC.
     - Main joystick: With the special 1ms firmware the Ultrastik 360 joystick is nearly as fast as my other project, the FastestJoystick. So the Ultrastik is an excellent choice now for my cabinet. 
     - The 2nd joystick: I had used a Buffalo as a 2nd attachable joystick (for 2 player games). This has been replaced by the FastestJoystick Teensy.
 2. Monitor: The Eizo introduces a delay of 1.5 frames delay which is far too big. This monitor needs to be exchanged. 
-3. NUC vs Raspi: Clear win for the NUC. No need to change the HW.
+3. NUC vs Raspi: Clear win for the NUC. Even with run-ahead. No need to change the HW.
+4. Run-ahead: Need to check retroarch/runahead on NUC. Maybe 1 could gain 1 more frame.
 
 I started with a delay of 96-153ms for the whole system.
 Now (with a new monitor, AOC-HDMI, and better joysticks) I'm at 39-74ms. I could reduce the original delay by about 50%.
