@@ -388,22 +388,50 @@ To avoid tearing, waitvsync=1 has to be turned on in mame and mess.
 The BenQ monitor is faster than the EIZO. At least 1 frame.
 
 
-## Raspberry Pi 4, Retropie/Retroarch
+## Retroarch (Retropie)
 
-The RP4 with retropie uses no X. I thought it might outperform the NUC in regards to lag.
+The RP4 (Raspi 4) with retropie uses no X. I thought it might outperform the NUC in regards to lag.
 The results were not so good. Total lag is about 2-3 frames higher. Or, lag is nearly double as high. The variance (min to max) is about the same, so maybe this depends on the emulator.
 
 Measurements were done with lr-mame2003.
 
-I didn't check the usb polling. And mybe it is also possible to get better results by connecting the joystick to the GPIOs.
+I didn't check the usb polling. And maybe it is also possible to get better results by connecting the joystick to the GPIOs.
 But I don't expect any significant improvements compared to the NUC.
+
+When using Retroarch on the NUC the results are about 10 ms better. Interesting is that the variance is down to only 1 frame (around 18 ms). This is better than with mame 0.155. Although the lag itself is still around 40ms worse.
 
 
 ### Run-ahead
 
 Turning on run-ahead with 1 frame didn't change the result.
 Using 2 frames resulted in a lag decrease of roughly 1 frame.
-Furthing increasing the frames didn't improve the lag. Most probably the system became too slow to see an improvement.
+Furthing increasing the frames didn't improve the lag. 
+
+This was the same on NUC and on the RP4.
+
+Most probably my lag measurement program has a lag of only 1 frame, so configuring anything higher does not help.
+
+
+#### Run-ahead CPU load
+
+On the NUC a run-ahead of 2 did not add anything visible to the CPU load.
+With and without the CPU load was about 10-20% only for simple games.
+
+BTW If run without VSync it can be seen what is theoretically possible: the games run subjectively 10x faster than normal.
+
+
+### Hard GPU Sync
+
+With the "Hard GPU sync" option the latency is reduced by 1 frame to 62-80ms.
+Together with 1 frame run-ahead this can go down to 45-62ms.
+
+
+### Windows PC
+
+Measurements on a (high end) PC i5 6400 2.7GHz with Geforce GTX 970 graphics card showed very much the results as the RP4: 90-120ms lag.
+Both for opengl and for d3d12.
+
+On windows there was no "Hard GPU sync" option.
 
 
 # Conclusions for my Arcade Cabinet
@@ -414,7 +442,10 @@ Furthing increasing the frames didn't improve the lag. Most probably the system 
     - The 2nd joystick: I had used a Buffalo as a 2nd attachable joystick (for 2 player games). This has been replaced by the FastestJoystick Teensy.
 2. Monitor: The Eizo introduces a delay of 1.5 frames delay which is far too big. This monitor needs to be exchanged. 
 3. NUC vs Raspi: Clear win for the NUC. Even with run-ahead. No need to change the HW.
-4. Run-ahead: Need to check retroarch/runahead on NUC. Maybe 1 could gain 1 more frame.
+4. Run-ahead: I could gain 1 frame with run-ahead. But it only makes sense if I could adopt this to mame 0.155 somehow.
+5. Retroarch: 
+    - Retroarch on the NUC has a variance of 1 frame only. The mame 0.155 setup has a variance of 2 frames.
+    - "Hard GPU sync": Is an interesting option as the variance is lower than with my current setup. But it's not significant enough (10ms less variance, but minimum time higher) to justify to change my complete setup.
 
 I started with a delay of 96-153ms for the whole system.
 Now (with a new monitor, AOC-HDMI, and better joysticks) I'm at 39-74ms. I could reduce the original delay by about 50%.
