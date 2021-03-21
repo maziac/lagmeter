@@ -8,7 +8,7 @@
 - EIZO:	Flachbildschirm 1600 x 1200 8-16ms - Eizo FlexScan S2100 21 Zoll HD Display Monitor
 - EIZO-SVGA:	EIZO with SVGA signal connected
 - EIZO-DVI:	EIZO with DVI signal connected
-- Button:	
+- Button:
     - Zero Delay USB Encoder, Dragon Rise Inc.
     - or Teensy FastestJoystick, see my other project here](http://www.github.com/FastestJoystick)
     - or various tested joysticks
@@ -37,7 +37,7 @@ It has no influence on lag. Same lag if 'Standard' or 'Game'.
 - Connectors for SVGA, DVI.
 - Response time (according specs): 8-16ms, http://www.webdatenblatt.de/cds/de/?pid=fa6b7ba81603252
     - On/Off Response Time: 16ms
-    - Average Midtone Response Time: 8ms 
+    - Average Midtone Response Time: 8ms
 - This monitor is so old it has no settings that could influence the lag.
 
 
@@ -97,7 +97,7 @@ See also [spreadsheet](Docs/LagMeasurements.ods).
 ## Joysticks
 
 With FastestJoystick it could be seen that the OS response time is about 1-3ms.
-FastestJoystick (in former releases) also allowed digital output. So this output can be used to measure the other joysticks more accurate. 
+FastestJoystick (in former releases) also allowed digital output. So this output can be used to measure the other joysticks more accurate.
 Note: I have meanwhile separated the output part into a new project. So if one would like to re-test he could use [usbout](https://github.com/maziac/usbout).
 
 
@@ -172,7 +172,7 @@ So we measure the delay consisting of:
 
 #### FastestJoystick (Teensy)
 
-Repeated delay measuremens (100 cycles): 3-5ms. 
+Repeated delay measuremens (100 cycles): 3-5ms.
 
 (Very independent of system load. Same times measured also with attract-mode and mame running at the same time in the foreground).
 
@@ -200,7 +200,7 @@ Delay measurement (100 cycles): 4-47 ms
 
 Delay measurement (100 cycles): 8-17 ms (down to 3-6ms with special firmware see below)
 
-Note: The Ultrastik 360 is an analog joystick. 
+Note: The Ultrastik 360 is an analog joystick.
 I had no possibility to measure the USB analog axes delay directly.
 Instead I measured the button input delay of the device and assume that the analog axes delay is very similar.
 
@@ -209,7 +209,7 @@ The measurements above were done with the "normal" firmware (e.g. Ultrastik_37.u
 
 
 
-##### Special Firmware 
+##### Special Firmware
 
 I also tested the Ultrastik_37_analogueout.ufw firmware which doesn't work as an USB joystick but instead puts the axes analog out to pins 9 and 10.
 This showed that the AD/DA conversion is fast enough.
@@ -239,7 +239,7 @@ Delay measurement (100 cycles): 4-14 ms
 
 ### Joystick turnaround time (lag)
 
-Here also he delay is measured from button press until a response.
+Here also the delay is measured from button press until a response.
 The setup is much easier.
 The joystick is simply attached to the Arduino USB Host Shield.
 One of the joystick's buttons is stimulated by the LagMeter.
@@ -319,7 +319,7 @@ Measured with photo resistor.
 
 The Monitor delay is dependend on the position of the photo sensor on the screen:
 With BenQ for example: If the photosensor is positioned at the top the delay is 11ms (to SVGA).
-If it is positioned at the bottom the delay is 20ms (toSVGA). 
+If it is positioned at the bottom the delay is 20ms (toSVGA).
 But this can be explained: the SVGA already start to measure with the first while line, i.e. the top line.
 (And as expected the difference in delay if the photo sensor is positioned left or right is neglectible.)
 
@@ -354,7 +354,7 @@ Both emulators showed exactly the same delay.
 
 ### Windowed vs. Fullscreen
 
-There seems to be no difference. 
+There seems to be no difference.
 
 
 ### Shader
@@ -405,7 +405,7 @@ When using Retroarch on the NUC the results are about 10 ms better. Interesting 
 
 Turning on run-ahead with 1 frame didn't change the result.
 Using 2 frames resulted in a lag decrease of roughly 1 frame.
-Furthing increasing the frames didn't improve the lag. 
+Furthing increasing the frames didn't improve the lag.
 
 This was the same on NUC and on the RP4.
 
@@ -414,10 +414,13 @@ Most probably my lag measurement program has a lag of only 1 frame, so configuri
 
 #### Run-ahead CPU load
 
-On the NUC a run-ahead of 2 did not add anything visible to the CPU load.
+On the NUC7 a run-ahead of 2 did not add anything visible to the CPU load.
 With and without the CPU load was about 10-20% only for simple games.
 
 BTW If run without VSync it can be seen what is theoretically possible: the games run subjectively 10x faster than normal.
+
+On the NUC (dual core) a run-ahead increased the load for both CPUs from about 20-30% to 40%.
+The graphics begun to stutter.
 
 
 ### Hard GPU Sync
@@ -438,12 +441,12 @@ On windows there was no "Hard GPU sync" option.
 
 1. Joysticks:
     - I had used the "Zero Delay USB Encoder, Dragon Rise Inc." for the buttons. This was removed completely. The measurements showed that the lag and the variation in lag are not usable for a joystick. At max. this USB encoder could lead to 2 frames lag.
-    - Main joystick: With the special 1ms firmware the Ultrastik 360 joystick is nearly as fast as my other project, the FastestJoystick. So the Ultrastik is an excellent choice now for my cabinet. 
+    - Main joystick: With the special 1ms firmware the Ultrastik 360 joystick is nearly as fast as my other project, the FastestJoystick. So the Ultrastik is an excellent choice now for my cabinet.
     - The 2nd joystick: I had used a Buffalo as a 2nd attachable joystick (for 2 player games). This has been replaced by the FastestJoystick Teensy.
-2. Monitor: The Eizo introduces a delay of 1.5 frames delay which is far too big. This monitor needs to be exchanged. 
+2. Monitor: The Eizo introduces a delay of 1.5 frames delay which is far too big. This monitor needs to be exchanged.
 3. NUC vs Raspi: Clear win for the NUC. Even with run-ahead. No need to change the HW.
 4. Run-ahead: I could gain 1 frame with run-ahead. But it only makes sense if I could adopt this to mame 0.155 somehow.
-5. Retroarch: 
+5. Retroarch:
     - Retroarch on the NUC has a variance of 1 frame only. The mame 0.155 setup has a variance of 2 frames.
     - "Hard GPU sync": Is an interesting option as the variance is lower than with my current setup. But it's not significant enough (10ms less variance, but minimum time higher) to justify to change my complete setup.
 
