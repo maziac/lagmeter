@@ -32,7 +32,13 @@ public:
     if(ButtonState != OldBtnState) {
       // Button changed
       joystickButtonChanged = true;
-      //Serial.println("XBOXUSBjoystick::readReport(): Button changed");
+#if 0
+      Serial.println("XBOXUSBjoystick::readReport(): Button changed");
+      Serial.print("ButtonState=");
+      Serial.println(ButtonState);
+      Serial.print("OldButtonState=");
+      Serial.println(OldButtonState);
+#endif
      }
     joystickButtonPressed = (ButtonState != 0);
   }

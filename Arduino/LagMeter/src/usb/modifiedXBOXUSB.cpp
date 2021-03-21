@@ -14,7 +14,7 @@
  Web      :  http://www.tkjelectronics.com
  e-mail   :  kristianl@tkjelectronics.com
 
- Note: The sources have been slightly modifed to choose the lowest polling interval instead 
+ Note: The sources have been slightly modifed to choose the lowest polling interval instead
 of the highest if several endpoints request different poll intervals.
 
  */
@@ -264,10 +264,13 @@ void ModifiedXBOXUSB::readReport() {
 
         if(ButtonState != OldButtonState) {
                 ButtonClickState = (ButtonState >> 16) & ((~OldButtonState) >> 16); // Update click state variable, but don't include the two trigger buttons L2 and R2
-                if(((uint8_t)OldButtonState) == 0 && ((uint8_t)ButtonState) != 0) // The L2 and R2 buttons are special as they are analog buttons
+                // The L2 and R2 buttons are special as they are analog buttons
+                if(((uint8_t)OldButtonState) == 0 && ((uint8_t)ButtonState) != 0) {
                         R2Clicked = true;
-                if((uint8_t)(OldButtonState >> 8) == 0 && (uint8_t)(ButtonState >> 8) != 0)
+                }
+                if((uint8_t)(OldButtonState >> 8) == 0 && (uint8_t)(ButtonState >> 8) != 0) {
                         L2Clicked = true;
+                }
                 OldButtonState = ButtonState;
         }
 }

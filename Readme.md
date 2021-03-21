@@ -60,26 +60,26 @@ The picture below tries to visualize the effect of the polling:
 <!--
 ~~~wavedrom
 {signal: [
-  
+
   {name: "Relais",
    wave: 'l....H.................',
    node: '.....a'},
-  
+
   {name: "Game Controller",
    wave: '5..35..35..35..35..35..',
    data: ["", "poll", "wait", "poll", "wait", "poll", "wait", "poll", "wait", "poll", "wait",],
    node: '.......cC..dD..eF'},
-  
+
   {name: "USB",
    wave: '4.34.....34.....34.....',
    data: ["", "poll", "t=8ms", "poll", "t=8ms", "poll", "t=8ms", "poll",],
    node: '.........gG.....hH.....'},
-  
+
   {name: "OS",
    wave: 'z..5z.....5..z...5.z...',
    data: ["delay", "delay", "delay",],
    node: '..........i..I...j.J'},
-  
+
   {name: "Application/Emulator",
    wave: '434..................34',
    data: ["", "poll", "frame n, t=20ms", "poll", "n+1", "poll",],
@@ -90,7 +90,7 @@ edge:[
       'a~>c',
       'a~>d',
       'a~>e',
-      
+
       'C~>g',
       'D~>h',
 
@@ -122,7 +122,7 @@ The full path needs to draw and display something on the monitor:
 <!--
 ~~~wavedrom
 {signal: [
-  
+
   {name: "Application/Emulator",
    wave: '4...34.................',
    data: ["frame n+1, t=20ms", "", "frame n+2, t=20ms", "",],
@@ -132,7 +132,7 @@ The full path needs to draw and display something on the monitor:
    wave: '5......5...............',
    data: ["frame n+1", "frame n+2, t=20ms", "frame n+3",],
    node: '.......l'},
-  
+
   {name: "Monitor",
    wave: '5......5.3.............',
    data: ["", "delay", "frame n, t=20ms", "delay", "frame n+1, t=20ms",],
@@ -147,7 +147,7 @@ edge:[
       'a~>c',
       'a~>d',
       'a~>e',
-      
+
       'C~>g',
       'D~>h',
 
@@ -181,10 +181,10 @@ With the calculation above we end up with a theoretical lag for these explanator
 ## Interpret Measurement Results with Polling
 
 When measuring delays and polling is involved the measured times vary between a minimum and a maximum value.
-If the count of measurements is large enough the minimum measured time is the time as if there weren't any influence of the polling. 
+If the count of measurements is large enough the minimum measured time is the time as if there weren't any influence of the polling.
 Whereas the maximum value adds up all polling intervals.
 I.e. max-min shows us the time that is lost due to polling.
-At least if nothing unforeseen happens: In an operating system like linux, windows or mac it can, of course, always happen that some process delays other process for a short while. 
+At least if nothing unforeseen happens: In an operating system like linux, windows or mac it can, of course, always happen that some process delays other process for a short while.
 So the max-min value is expected to be bigger than the sum of all unsynchronized polling times.
 
 
@@ -222,7 +222,7 @@ So, even if you see that there is only one frame delay when single stepping the 
 
 Note 1: You don't need to wire the LCD and buttons if you use the LCD Keypad shield. It already contains the buttons and the correct connections.
 
-Note 2: I had trouble with the contrat of the HD44780 1602 lcd Display. It turned out that the contrast became much better after I put a resistor (100 Ohm) in the +5V poer connection of the LCD. 
+Note 2: I had trouble with the contrat of the HD44780 1602 lcd Display. It turned out that the contrast became much better after I put a resistor (100 Ohm) in the +5V poer connection of the LCD.
 I found this tweak here: https://forum.arduino.cc/index.php?topic=337502.msg4248679#msg4248679
 Maybe you need to play around with the values a little bit.
 
@@ -263,19 +263,19 @@ Note: the UsblagLCD mode cannot be left automatically, you need to press reset t
 
 Assuming that you have the Arduino IDE, just install the library USB Host Shield Library 2.0 in the Tools > Manage Libraries section.
 
-### LagMeter 
+### LagMeter
 
 ![](Docs/Images/Readme/start_and_buttons.jpg)
 
 The LagMeter uses 5 different buttons. Each button offers a different test:
 - **"Button ON/OFF"**: Will simply output the value measured at the photo resistor. At the same time a button press/release is stimulated at a frequency of approx. 1s. This is to check that the photo resistor is working and to check the values when button is pressed and released.
-- **"Test: Button -> Photosensor" (Total Monitor Lag)**: It starts with a short calibration phase. During calibration the button is pressed for a second and the monitor output, i.e. the photo transistor value is read. 
+- **"Test: Button -> Photosensor" (Total Monitor Lag)**: It starts with a short calibration phase. During calibration the button is pressed for a second and the monitor output, i.e. the photo transistor value is read.
 Then the button is released and the photo transistor value is read again.
 Afterwards 100 measurement cycles are done with button presses and releases. For each button press the time is measured until an action occurred on the screen.
 At the end the minimum, maximum and average time is shown.
 If a measurement takes too long (approx 4 secs) an error is shown.
 You need a program that reacts on game controller button presses. E.g. jstest-gtk in Linux. The photo sensor need to be arranged just above the (small) screen area that changes when the button is pressed.
-For the tests with the emulator you can use the ZX Spectrum program (sna-file) in this repository. It reads the (ZX Spectrum) keyboard and toggles the screen (e.g. black/white). 
+For the tests with the emulator you can use the ZX Spectrum program (sna-file) in this repository. It reads the (ZX Spectrum) keyboard and toggles the screen (e.g. black/white).
 In the emulator you need to map the game controller button to the "0" Spectrum key.
 - **"Test: Button -> AD2 (eg.SVGA)" (Total SVGA Lag)**: Same as "Total Monitor Lag" but instead of measuring the photo transitor it monitors the SVGA output of the PC. I.e. as a result you get the lag without the monitor.
 - **"Test: SVGA -> Photosensor" (Monitor Lag)**: This measures the monitor lag itself. For this you need to connect all cables: Game controller button, photo transitor (at monitor) and SVGA at the SVGA output ofthe PC (because the monitor is connected as well you need a Y-SVGA adapter to connect both at the same time).
@@ -298,7 +298,7 @@ You can interrupt all measurements by pressing any key.
 ![](Docs/Images/Readme/start_screen_usb.jpg))
 
 The UsblagLcd uses 3 different buttons with different tests:
-- **"Button: ON/OFF"**: Will toggle between button press/release at a frequency of approx. 1s. You should see the LCD display changing when a game controller's button is pressed. 
+- **"Button: ON/OFF"**: Will toggle between button press/release at a frequency of approx. 1s. You should see the LCD display changing when a game controller's button is pressed.
 For a simple test you can attach your game controller and press the buttons manually. You should see the LCD display changing.
 Then you can open your game controller and attach the cables to a button to simulate button presses. If this works you see the LCD display changing at the toggle frequency.
 - **"Test: USB ?ms" (Game Controller Lag)**: Measures the lag of the game controller, i.e. from button press to USB response.
@@ -308,6 +308,17 @@ The test uses the USB polling rate requested by the USB controller. The used pol
 - **"Test: USB 1ms" (Game Controller Lag)**: Same as before but this test uses a fixed polling rate of 1 ms. Not available for XBOX controller.
 
 You can interrupt all measurements by pressing any key.
+
+Note:
+After you connect the USB or XBOX device AND you press a key you see a display like this:
+![](Docs/Images/Readme/start_screen_usb_1.jpg)
+
+If you press a button it changes:
+![](Docs/Images/Readme/start_screen_usb_2.jpg)
+
+I.e. you have visual feedback that the device reports the button presses.
+However, I have noticed that in some case you see a fast flickering display. In that case the controller reports many button presses. This makes the measurement impossible. Try pressing all buttons and the D-Pad. In my case it solved the issue.
+Maybe in some cases there are "hanging" buttons or D-Pads.
 
 
 # Validation
@@ -325,7 +336,7 @@ Both together are << 1ms.
 
 
 
-## Photo sensor 
+## Photo sensor
 
 Response time (cyan is the compare-digital-out, starts with button, ends when photo sensor range is met):
 
@@ -346,7 +357,7 @@ The code to measure the lag has a check to test that the time between 2 measurem
 
 ## Direct feedback with LED
 
-I put an LED to the relais. The LED emitted light into the photo sensor. 
+I put an LED to the relais. The LED emitted light into the photo sensor.
 This is the fastest feedback that could be measured. With the accuracy considerations above the overall lag should be max. 1ms.
 
 Here is the result for 100 test cycles:
