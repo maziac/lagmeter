@@ -292,11 +292,20 @@ Delay measurement (100 cycles): 1-2 ms
 
 ![](Images/Measurements/LagMeter_xbox.jpg)
 
-This was the best result of all joysticks. Interesting enough this was the **cheaper** of the 2 xbox controllers.
+This was the best result of all commercial available joysticks. Interesting enough this was the **cheaper** of the 2 xbox controllers.
 
 I soldered a cable inside the controller in order not to have to open it everytime I want to do a measurement:
 ![](Images/Measurements/xbox_controller_modified.jpg)
 
+
+### DaemonBite-Arcade-Encoder
+
+See [DaemonBite-Arcade-Encoder](https://github.com/MickGyver/DaemonBite-Arcade-Encoder).
+An selfmade arcade controller based on the Arduino Pro Micro (ATMega32U4).
+
+This is really the fastest one I was able to get. Response time was 1 ms or faster.
+
+![](Images/Measurements/LagMeter_atmega32u4.jpg)
 
 
 ## OS
