@@ -9,7 +9,7 @@ protected:
   uint8_t lastReportedValues[MAX_VALUES] = {};
   uint8_t idleValues[MAX_VALUES] = {};
   unsigned long startTime = 0;
-  const uint8_t startIndex = 5;
+  const uint8_t startIndex = 0; //5;
   
 public:
   JoystickReportParser::JoystickReportParser() {
@@ -25,17 +25,27 @@ public:
   }
 
   void JoystickReportParser::Parse(USBHID* hid, bool is_rpt_id, uint8_t len, uint8_t* buf) {
-    /*
+
+#if 0   
     // Print
     for(uint8_t i=0; i<len; i++) {
       SerialPrintHex<uint8_t>(buf[i]); 
       Serial.print(F(", "));
     }
     Serial.println();
-    */
+#endif
+
     
     // Check if changed
     uint8_t count = min(MAX_VALUES, len);
+
+#if 0
+    Serial.print("count=");
+    Serial.println(count);
+    Serial.print("startIndex=");
+    Serial.println(startIndex);
+#endif
+    
     // Check and copy
     for(uint8_t i=0; i<count; i++) {
       if(buf[i] != lastReportedValues[i]) {
