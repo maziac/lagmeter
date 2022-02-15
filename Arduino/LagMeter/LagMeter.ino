@@ -44,7 +44,7 @@ However it was tested only with a 16MHz CPU.
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "1.3"
+#define SW_VERSION "1.4d"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
@@ -258,7 +258,7 @@ void usblagTestButton() {
 
 
 // Measures the usb lag. I.e. the time from button press to received USB reaction.
-// Retruns the time in mili seconds.
+// Returns the time in milli seconds.
 int measureUsbLag() {
   // Handle USB a few times just in case
   Usb.Task();
@@ -292,9 +292,11 @@ int measureUsbLag() {
   return time;
 }
 
+extern JoystickReportParser HidJoyParser; // TODO: MOVE
 
 // Measures the usb HID lag for 100x.
-void usblagMeasure() {
+void usblagMeasure()
+{
   // Show test title
   lcd.clear();
   lcd.print(F("Test: USB "));
@@ -316,11 +318,22 @@ void usblagMeasure() {
   lcd.setCursor(0, 1);
   lcd.print(F("touch joystick."));
 
-  for(int i=0; i<1000; i++) {
+  HidJoyParser.SetModeCalib(true);
+  bool output = true;
+  for (int i = 0; i < 1000; i++)
+  {
+     // We need to stimulate the button otherwise nothing is reported
+    digitalWrite(OUT_PIN_BUTTON, output);
+    output = !output;
     Usb.Task();
-    waitMs(2); if(isUsbAbort()) return;
+    waitMs(2);
+    if(isUsbAbort())
+    {
+      HidJoyParser.SetModeCalib(false);
+      return;
+    }
   }
-  setHidIdleValues();
+  HidJoyParser.SetModeCalib(false);
 
   lcd.clear();
   struct MinMax timeRange = {1023, 0};
@@ -408,7 +421,6 @@ void usblagMeasure() {
     Usb.Task();
   }
 }
-
 
 // Checks for keypresses for usblag mode.
 void handleUsblag() {
