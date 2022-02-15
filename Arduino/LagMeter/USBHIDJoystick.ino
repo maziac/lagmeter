@@ -9,22 +9,12 @@ protected:
   uint8_t lastReportedValues[MAX_VALUES] = {0};
   uint16_t counts[MAX_VALUES];
   uint8_t measureIndex = 0;
-  uint8_t idleValues[MAX_VALUES] = {}; // TODO: REMOVE
   unsigned long startTime = 0;
   const uint8_t startIndex = 0; //5;
   bool calibrationMode = false;
 
 public:
   JoystickReportParser::JoystickReportParser() {
-  }
-
-  // Store the last reported values as Idle values.
-  // Any change to these values is recognized as "button press".
-  void setIdleValues() {
-    for(uint8_t i=0; i<MAX_VALUES; i++) {
-      idleValues[i] = lastReportedValues[i];
-    }
-    joystickButtonPressed = false;
   }
 
 
@@ -53,6 +43,12 @@ public:
           measureIndex = i;
         }
       }
+#if 01
+      Serial.print("measureIndex=");
+      Serial.println(measureIndex);
+      Serial.print("maxCount=");
+      Serial.println(maxCount);
+#endif
     }
   }
 
@@ -76,15 +72,6 @@ public:
    */
   void JoystickReportParser::ParseCalib(uint8_t len, uint8_t* buf)
   {
-#if 0
-    // Print
-    for(uint8_t i=0; i<len; i++) {
-      SerialPrintHex<uint8_t>(buf[i]);
-      Serial.print(F(", "));
-    }
-    Serial.println();
-#endif
-
     // Safety check
     uint8_t count = min(MAX_VALUES, len);
 
@@ -100,16 +87,6 @@ public:
       //Serial.print(F(", "));
     }
     //Serial.println();
-
-#if 0
-    Serial.println("Idle values");
-    for (uint8_t i = 0; i < count; i++)
-    {
-      Serial.print(idleValues[i]);
-      Serial.print(F(", "));
-    }
-    Serial.println();
-#endif
   }
 
 
@@ -148,7 +125,6 @@ public:
 
     // Check if "button press"
     joystickButtonPressed = (buf[measureIndex] != lastReportedValues[measureIndex]);
-    lastReportedValues[measureIndex] = buf[measureIndex];
 
     Serial.print("joystickButtonPressed = ");
     Serial.println(joystickButtonPressed);
@@ -213,21 +189,24 @@ public:
   }
 };
 
-
-
 // Create the HID instances.
 UsbHidJoystick Hid(&Usb);
 
 
-
-// Sets the idle values for the joystick. I.e. no button pressed.
-void setHidIdleValues() {
-  HidJoyParser.setIdleValues();
+/**
+ * Sets the parse mode.
+ * @param calib true = calibration mode: counts the number of changes per byte
+ * false = sets joystickButtonPressed if the byte with the right index changed.
+ */
+void setModeCalib(bool calib)
+{
+  HidJoyParser.SetModeCalib(calib);
 }
 
 
 // Sets (Overrides) the poll interval.
-void setPollInterval(int pollInterval) {
+void setPollInterval(int pollInterval)
+{
   Hid.setPollInterval(pollInterval);
   Usb.Task();
   Usb.Task();

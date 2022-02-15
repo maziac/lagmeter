@@ -8,7 +8,7 @@ which itself contains code from USB Host Shield Library 2.0 (GPL2 License).
 
 
 Licence
-The drivers code are mainly built on extracted code from the USB Host Shield Library 2.0, licenced using GPL2.
+The drivers code are mainly built on extracted code from the USB Host Shield Library 2.0, licensed using GPL2.
 The rest of the code is under the MIT Licence.
 
 
@@ -150,7 +150,7 @@ void setup() {
   lcd.clear();
 
 
-  // usblag initilization
+  // usblag initialization
   if (Usb.Init() == -1) {
     Serial.println("OSC did not start.");
     Error(F("Error:"), F("USB problem!!!"));
@@ -292,7 +292,6 @@ int measureUsbLag() {
   return time;
 }
 
-extern JoystickReportParser HidJoyParser; // TODO: MOVE
 
 // Measures the usb HID lag for 100x.
 void usblagMeasure()
@@ -318,7 +317,7 @@ void usblagMeasure()
   lcd.setCursor(0, 1);
   lcd.print(F("touch joystick."));
 
-  HidJoyParser.SetModeCalib(true);
+  setModeCalib(true);
   bool output = true;
   for (int i = 0; i < 1000; i++)
   {
@@ -329,11 +328,13 @@ void usblagMeasure()
     waitMs(2);
     if(isUsbAbort())
     {
-      HidJoyParser.SetModeCalib(false);
+      setModeCalib(false);
       return;
     }
   }
-  HidJoyParser.SetModeCalib(false);
+  digitalWrite(OUT_PIN_BUTTON, LOW);
+  waitMs(100);
+  setModeCalib(false);
 
   lcd.clear();
   struct MinMax timeRange = {1023, 0};
