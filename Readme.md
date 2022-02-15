@@ -259,9 +259,17 @@ To change to UsblagLCD mode you need to attach an USB game controller. If it is 
 
 Note: the UsblagLCD mode cannot be left automatically, you need to press reset to get back to the LagMeter mode.
 
+
 ### Installation
 
 Assuming that you have the Arduino IDE, just install the library USB Host Shield Library 2.0 in the Tools > Manage Libraries section.
+
+It works with Arduino 1.8.10.
+Board: "Arduino Uno"
+Port: Depends on your setup, e.g. "/dev/cu.usbserial-14230"
+Programmer: "Arduino as ISP (ATMega32u4)"
+
+
 
 ### LagMeter
 
