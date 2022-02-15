@@ -78,11 +78,14 @@ public:
     // Check and copy
     for (uint8_t i = 0; i < count; i++)
     {
-      if (buf[i] != lastReportedValues[i])
+      uint8_t bits = buf[i] ^ lastReportedValues[i]; // Is 0 if equal
+      // Now check that only 1 bit is set (i.e. ignore e.g. axis changes which probably often set more than one bit)
+      if(bits && !(bits & (bits - 1)))
       {
-        lastReportedValues[i] = buf[i];
         counts[i]++;  // Increase count
       }
+      // In any case remember the value
+      lastReportedValues[i] = buf[i];
       //Serial.print(buf[i]);
       //Serial.print(F(", "));
     }
