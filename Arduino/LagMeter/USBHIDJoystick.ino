@@ -35,14 +35,18 @@ public:
       // Calculate max count index
       uint16_t maxCount = 0;
       measureIndex = 0;
+      //Serial.println(F("counts[]:"));
       for (uint8_t i = 0; i < MAX_VALUES; i++)
       {
+        //SerialPrintHex<uint8_t>(counts[i]);
+        //Serial.print(F(", "));
         if (counts[i] > maxCount)
         {
           maxCount = counts[i];
           measureIndex = i;
         }
       }
+      //Serial.println();
 #if 0
       Serial.print("measureIndex=");
       Serial.println(measureIndex);
@@ -74,6 +78,16 @@ public:
    */
   void JoystickReportParser::ParseCalib(uint8_t len, uint8_t* buf)
   {
+#if 0
+    // Print
+    for (uint8_t i = 0; i < len; i++)
+    {
+      SerialPrintHex<uint8_t>(buf[i]);
+      Serial.print(F(", "));
+    }
+    Serial.println();
+#endif
+
     // Safety check
     uint8_t count = min(MAX_VALUES, len);
 
@@ -84,7 +98,13 @@ public:
       // Now check that only 1 bit is set (i.e. ignore e.g. axis changes which probably often set more than one bit)
       if(bits && !(bits & (bits - 1)))
       {
-        counts[i]++;  // Increase count
+        counts[i]++; // Increase count
+#if 0
+        Serial.print("i=");
+        Serial.print(i);
+        Serial.print(", counts[i]=");
+        Serial.println(counts[i]);
+#endif
       }
       // In any case remember the value
       lastReportedValues[i] = buf[i];
@@ -93,7 +113,6 @@ public:
     }
     //Serial.println();
   }
-
 
   /**
    * Parses for mesurement.
