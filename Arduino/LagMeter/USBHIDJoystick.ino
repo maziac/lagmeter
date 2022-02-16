@@ -43,11 +43,13 @@ public:
           measureIndex = i;
         }
       }
-#if 01
+#if 0
       Serial.print("measureIndex=");
       Serial.println(measureIndex);
       Serial.print("maxCount=");
       Serial.println(maxCount);
+      Serial.print("lastReportedValues[measureIndex] = ");
+      Serial.println(lastReportedValues[measureIndex]);
 #endif
     }
   }
@@ -116,21 +118,27 @@ public:
     if (startTime == 0)
       startTime = time;
     if (time > startTime + 1000)
+    {
       joystickButtonChanged = true;
+      //Serial.println("joystickButtonChanged = true");
+    }
     // Serial.print(F(", "));
     // Serial.println(joystickButtonChanged);
 
     // Safety check
     if (measureIndex >= len) {
-      //joystickButtonPressed = false;
       return;
     }
 
     // Check if "button press"
     joystickButtonPressed = (buf[measureIndex] != lastReportedValues[measureIndex]);
 
+#if 0
+    Serial.print("buf[measureIndex] = ");
+    Serial.println(buf[measureIndex]);
     Serial.print("joystickButtonPressed = ");
     Serial.println(joystickButtonPressed);
+#endif
   }
 };
 

@@ -258,8 +258,8 @@ void usblagTestButton() {
 
 
 // Measures the usb lag. I.e. the time from button press to received USB reaction.
-// Returns the time in milli seconds.
-int measureUsbLag() {
+// Returns the time in 0.1 milli seconds resolution.
+int16_t measureUsbLag() {
   // Handle USB a few times just in case
   Usb.Task();
   Usb.Task();
@@ -267,6 +267,9 @@ int measureUsbLag() {
   Usb.Task();
 
   // "Press" button
+  //joystickButtonPressed = false;
+  //Serial.print("m joystickButtonPressed = ");
+  //Serial.println(joystickButtonPressed);
   digitalWrite(OUT_PIN_BUTTON, HIGH);
 
   // Wait until button press
@@ -278,6 +281,7 @@ int measureUsbLag() {
     // Stop measuring
     long stopTime = micros();
     diffTime = stopTime - startTime;
+
     // Check if too long
     if(diffTime > 1000000l) {
       // More than a second
@@ -287,8 +291,8 @@ int measureUsbLag() {
   }
 
   // Round
-  diffTime += 500;
-  int time = diffTime/1000; // Miliseconds
+  diffTime += 50;
+  int16_t time = diffTime/100; // 0.1 ms
   return time;
 }
 
@@ -296,6 +300,8 @@ int measureUsbLag() {
 // Measures the usb HID lag for 100x.
 void usblagMeasure()
 {
+  char buffer[10];
+
   // Show test title
   lcd.clear();
   lcd.print(F("Test: USB "));
@@ -334,10 +340,12 @@ void usblagMeasure()
   }
   digitalWrite(OUT_PIN_BUTTON, LOW);
   waitMs(100);
+  Usb.Task();
+  Usb.Task();
   setModeCalib(false);
 
   lcd.clear();
-  struct MinMax timeRange = {1023, 0};
+  struct MinMax timeRange = {1023*10, 0};
   float avg = 0.0;
   for(int i=1; i<=COUNT_CYCLES; i++) {
     // Print
@@ -361,11 +369,26 @@ void usblagMeasure()
     }
 
     // Measure lag
-    int time = measureUsbLag();
+    int16_t time = measureUsbLag();  // in 0.1 ms resolution
     if(isUsbAbort()) return;
 
+#if 0
+  for(uint16_t i=0;i<1000;i++)
+  {
+    uint32_t t1 = micros();
+    uint32_t t2 = micros();
+    uint32_t t3;
+    for (uint16_t k = random(0, 999); k < 1000; k++)
+      t3 = micros();
+    Serial.println(t1);
+    Serial.println(t2);
+    Serial.println(t3);
+  }
+#endif
+
     // Output result:
-    lcd.print(time);
+    dtostrf(time / 10.0, 1, 1, buffer);
+    lcd.print(buffer);
     Usb.Task();
     lcd.print(F("ms     "));
     Usb.Task();
@@ -377,12 +400,14 @@ void usblagMeasure()
       timeRange.min = time;
 
     // Print min/max result
-    lcd.setCursor(5,1);
+    lcd.setCursor(5, 1);
     if(timeRange.min != timeRange.max) {
-      lcd.print(timeRange.min);
+      dtostrf(timeRange.min / 10.0, 1, 1, buffer);
+      lcd.print(buffer);
       lcd.print(F("-"));
     }
-    lcd.print(timeRange.max);
+    dtostrf(timeRange.max / 10.0, 1, 1, buffer);
+    lcd.print(buffer);
     lcd.print(F("ms     "));
 
     // Calculate average
@@ -406,14 +431,14 @@ void usblagMeasure()
       }
       Usb.Task();
     }
-
   }
 
   // Print average:
   avg /= COUNT_CYCLES;
   lcd.setCursor(0,0);
   lcd.print(F("Avg lag: "));
-  lcd.print((int)avg);
+  dtostrf(avg / 10.0, 1, 1, buffer);
+  lcd.print(buffer);
   lcd.print(F("ms     "));
 
   // Wait until keypress

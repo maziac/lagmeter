@@ -3,8 +3,8 @@
 
 // Structure to return min/max values.
 struct MinMax {
-  int min;
-  int max;
+  int16_t min;
+  int16_t max;
 };
 
 
