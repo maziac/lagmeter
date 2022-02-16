@@ -310,6 +310,7 @@ The UsblagLcd uses 3 different buttons with different tests:
 For a simple test you can attach your game controller and press the buttons manually. You should see the LCD display changing.
 Then you can open your game controller and attach the cables to a button to simulate button presses. If this works you see the LCD display changing at the toggle frequency.
 - **"Test: USB ?ms" (Game Controller Lag)**: Measures the lag of the game controller, i.e. from button press to USB response.
+It uses the polling rate requested from the game controller ("?ms" will show the requested value).
 Connect the button of your game controller with the cable and start the test.
 It does 100 cycles and shows the minimum, maximum and average time used by the controller.
 The test uses the USB polling rate requested by the USB controller. The used polling rate is displayed.

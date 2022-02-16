@@ -44,7 +44,7 @@ However it was tested only with a 16MHz CPU.
 #include "src/Measurement/Measure.h"
 
 // The SW version.
-#define SW_VERSION "1.4d"
+#define SW_VERSION "1.40"
 
 // Enable this to get some additional output over serial port (especially for usblag).
 #define SERIAL_IF_ENABLED
@@ -486,6 +486,7 @@ void handleUsblag() {
       else {
         // Start testing usb device measurement
         setPollInterval(1); // Use 1ms poll interval
+        // Not all numbers work. Seems that numbers from 1 to 10 (including) do work.
         usblagMeasure();
         printUsblagMenu();
         joystickButtonChanged = false;
