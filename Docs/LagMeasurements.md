@@ -305,7 +305,13 @@ An selfmade arcade controller based on the Arduino Pro Micro (ATMega32U4).
 
 This is really the fastest one I was able to get. Response time was 1 ms or faster.
 
-![](Images/Measurements/LagMeter_atmega32u4.jpg)
+![](Images/Measurements/LagMeter_daemonbite.jpg)
+
+I have redone the measurements with version 1.4 of the lagmeter which has 0.1 ms accuracy.
+This shows a response time of 0.4 to 1.5 ms:
+
+![](Images/Measurements/LagMeter_daemonbite_b.jpg)
+
 
 
 ## OS
