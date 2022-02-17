@@ -258,8 +258,8 @@ void usblagTestButton() {
 
 
 // Measures the usb lag. I.e. the time from button press to received USB reaction.
-// Returns the time in 0.1 milli seconds resolution.
-int16_t measureUsbLag() {
+// Returns the time in milli seconds.
+double measureUsbLag() {
   // Handle USB a few times just in case
   Usb.Task();
   Usb.Task();
@@ -267,9 +267,7 @@ int16_t measureUsbLag() {
   Usb.Task();
 
   // "Press" button
-  //joystickButtonPressed = false;
-  //Serial.print("m joystickButtonPressed = ");
-  //Serial.println(joystickButtonPressed);
+  joystickButtonPressed = false;
   digitalWrite(OUT_PIN_BUTTON, HIGH);
 
   // Wait until button press
@@ -291,13 +289,20 @@ int16_t measureUsbLag() {
   }
 
   // Round
-  diffTime += 50;
-  int16_t time = diffTime/100; // 0.1 ms
+  double time = diffTime/1000.0; // ms
   return time;
 }
 
 
-// Measures the usb HID lag for 100x.
+/*
+Measures the usb HID lag for 100x.
+The displayed values have an accuracy of 0.1ms.
+The values are rounded when displayed:
+1.54  -> "1.5"
+1.55  -> "1.5"
+1.551 -> "1.6"
+1.56  -> "1.6"
+*/
 void usblagMeasure()
 {
   char buffer[10];
@@ -345,7 +350,7 @@ void usblagMeasure()
   setModeCalib(false);
 
   lcd.clear();
-  struct MinMax timeRange = {1023*10, 0};
+  struct MinMaxFloat timeRange = {100000 /* 100 sec */, 0};
   float avg = 0.0;
   for(int i=1; i<=COUNT_CYCLES; i++) {
     // Print
@@ -369,7 +374,7 @@ void usblagMeasure()
     }
 
     // Measure lag
-    int16_t time = measureUsbLag();  // in 0.1 ms resolution
+    double time = measureUsbLag();  // in 0.1 ms resolution
     if(isUsbAbort()) return;
 
 #if 0
@@ -387,7 +392,7 @@ void usblagMeasure()
 #endif
 
     // Output result:
-    dtostrf(time / 10.0, 1, 1, buffer);
+    dtostrf(time, 1, 1, buffer);
     lcd.print(buffer);
     Usb.Task();
     lcd.print(F("ms     "));
@@ -400,13 +405,13 @@ void usblagMeasure()
       timeRange.min = time;
 
     // Print min/max result
-    lcd.setCursor(5, 1);
+    lcd.setCursor(4, 1);
     if(timeRange.min != timeRange.max) {
-      dtostrf(timeRange.min / 10.0, 1, 1, buffer);
+      dtostrf(timeRange.min, 1, 1, buffer);
       lcd.print(buffer);
       lcd.print(F("-"));
     }
-    dtostrf(timeRange.max / 10.0, 1, 1, buffer);
+    dtostrf(timeRange.max, 1, 1, buffer);
     lcd.print(buffer);
     lcd.print(F("ms     "));
 
@@ -437,7 +442,7 @@ void usblagMeasure()
   avg /= COUNT_CYCLES;
   lcd.setCursor(0,0);
   lcd.print(F("Avg lag: "));
-  dtostrf(avg / 10.0, 1, 1, buffer);
+  dtostrf(avg, 1, 1, buffer);
   lcd.print(buffer);
   lcd.print(F("ms     "));
 
@@ -484,6 +489,8 @@ void handleUsblag() {
           abortAll = false;
       }
       else {
+        // Save poll intervall
+        int bakPollInterval = usedPollInterval;
         // Start testing usb device measurement
         setPollInterval(1); // Use 1ms poll interval
         // Not all numbers work. Seems that numbers from 1 to 10 (including) do work.
@@ -491,6 +498,8 @@ void handleUsblag() {
         printUsblagMenu();
         joystickButtonChanged = false;
         abortAll = false;
+        // Restore poll interval
+        setPollInterval(bakPollInterval);
       }
       break;
   }
