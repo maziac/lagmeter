@@ -1125,11 +1125,13 @@ void measureMinPressTime() {
 		}
 
 		// Print to serial
+#ifdef SERIAL_IF_ENABLED
 		Serial.print(pressTime);
 		Serial.print(F("\t"));
 		Serial.print(cycle);
 		Serial.print(F("\t"));
 		Serial.println(totalTime);
+#endif
 
 		// Check for new max. time
 		if (totalTime > maxTime) {

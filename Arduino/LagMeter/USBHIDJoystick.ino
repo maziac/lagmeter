@@ -176,7 +176,9 @@ public:
 		usedPollInterval = pollInterval;
 		usbMode = true;
 		if (!SetReportParser(0, &HidJoyParser)) {
+#ifdef SERIAL_IF_ENABLED
 			Serial.println("SetReportParser problem.");
+#endif
 			Error(F("Error:"), F("SetReportParser!!!"));
 		}
 		return res;

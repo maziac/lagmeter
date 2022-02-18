@@ -47,7 +47,7 @@ However it was tested only with a 16MHz CPU.
 #define SW_VERSION "1.4"
 
 // Enable this to get some additional output over serial port (especially for usblag).
-#define SERIAL_IF_ENABLED
+//#define SERIAL_IF_ENABLED
 
 
 // Define used Keys.
@@ -152,7 +152,9 @@ void setup() {
 
 	// usblag initialization
 	if (Usb.Init() == -1) {
+#ifdef SERIAL_IF_ENABLED
 		Serial.println("OSC did not start.");
+#endif
 		Error(F("Error:"), F("USB problem!!!"));
 	}
 	delay(200);
