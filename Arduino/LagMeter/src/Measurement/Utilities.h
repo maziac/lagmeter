@@ -7,16 +7,16 @@
 
 // Sets the ADC clock (the lowest 3 bits)
 #define SET_ADC_CLOCK(bits)   (_SFR_BYTE(ADCSRA) = (_SFR_BYTE(ADCSRA) & 0b11111000) | bits)
- 
- 
+
+
 // Defines for the available LCD keys.
 enum {
-  LCD_KEY_NONE,
-  LCD_KEY_SELECT,
-  LCD_KEY_LEFT,
-  LCD_KEY_RIGHT,
-  LCD_KEY_UP,
-  LCD_KEY_DOWN
+	LCD_KEY_NONE,
+	LCD_KEY_SELECT,
+	LCD_KEY_LEFT,
+	LCD_KEY_RIGHT,
+	LCD_KEY_UP,
+	LCD_KEY_DOWN
 };
 
 // Threshold for keys. Below a key is pressed, above no key is pressed.

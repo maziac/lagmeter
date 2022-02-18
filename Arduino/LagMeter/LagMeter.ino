@@ -58,7 +58,7 @@ const int KEY_MEASURE_SVGA = LCD_KEY_UP;
 const int KEY_MEASURE_SVGA_TO_PHOTO = LCD_KEY_LEFT;
 const int KEY_MEASURE_MIN_TIME = LCD_KEY_RIGHT;
 // usblag:
-const int KEY_USBLAG_MEASURE     = LCD_KEY_DOWN;
+const int KEY_USBLAG_MEASURE = LCD_KEY_DOWN;
 const int KEY_USBLAG_MEASURE_1MS = LCD_KEY_UP;
 const int KEY_USBLAG_TEST_BUTTON = LCD_KEY_SELECT;
 
@@ -87,40 +87,40 @@ int usedPollInterval = 0;
 
 // Prints the main lag-meter menu.
 void printLagMeterMenu() {
-  lcd.clear();
-  lcd.print(F("** Lag-Meter  **"));
-  lcd.setCursor(0, 1);
-  lcd.print(F("v" SW_VERSION "," __DATE__));
+	lcd.clear();
+	lcd.print(F("** Lag-Meter  **"));
+	lcd.setCursor(0, 1);
+	lcd.print(F("v" SW_VERSION "," __DATE__));
 }
 
 // Prints the main usblag menu.
 void printUsblagMenu() {
-  lcd.clear();
-  lcd.print(F("** USB Lag  **"));
-  lcd.setCursor(0, 1);
-  if(xboxMode) {
-    lcd.print(F("xbox"));
-  }
-  else {
-    lcd.print(F("Req. poll="));
-    lcd.print(usedPollInterval);
-    lcd.print(F("ms"));
-  }
+	lcd.clear();
+	lcd.print(F("** USB Lag  **"));
+	lcd.setCursor(0, 1);
+	if (xboxMode) {
+		lcd.print(F("xbox"));
+	}
+	else {
+		lcd.print(F("Req. poll="));
+		lcd.print(usedPollInterval);
+		lcd.print(F("ms"));
+	}
 }
 
 
 // Prints a different pattern for button press or release.
 void printJoystickButtonChanged() {
-  static bool lastButtonPattern = false;
-  if(joystickButtonChanged) {
-    joystickButtonChanged = false;
-    lcd.setCursor(0,1);
-    lastButtonPattern = !lastButtonPattern;
-    if(lastButtonPattern)
-      lcd.print(F("####----####----"));
-    else
-      lcd.print(F("----####----####"));
-  }
+	static bool lastButtonPattern = false;
+	if (joystickButtonChanged) {
+		joystickButtonChanged = false;
+		lcd.setCursor(0, 1);
+		lastButtonPattern = !lastButtonPattern;
+		if (lastButtonPattern)
+			lcd.print(F("####----####----"));
+		else
+			lcd.print(F("----####----####"));
+	}
 }
 
 
@@ -128,169 +128,169 @@ void printJoystickButtonChanged() {
 // SETUP
 void setup() {
 
-  // Debug communication
+	// Debug communication
 #ifdef SERIAL_IF_ENABLED
-  Serial.begin(115200);
-  Serial.println(F("Serial connection up!"));
+	Serial.begin(115200);
+	Serial.println(F("Serial connection up!"));
 #endif
 
-  // Increase ADC clock to speedup the analogRead function
-  SET_ADC_CLOCK(0b101);  // Use 38kHz (strange effects below 0b100)
-  int adc = analogRead(0); // throw away first value
+	// Increase ADC clock to speedup the analogRead function
+	SET_ADC_CLOCK(0b101);  // Use 38kHz (strange effects below 0b100)
+	int adc = analogRead(0); // throw away first value
 
-  // Random seed
-  randomSeed(adc);
+	// Random seed
+	randomSeed(adc);
 
-  // Lagmeter initialization
-  //pinMode(OUT_PIN_BUTTON, OUTPUT); Already setup by setupMeasurement.
-  // Setup pins
-  setupMeasurement();
-  // Setup LCD
-  lcd.begin(16, 2);
-  lcd.clear();
+	// Lagmeter initialization
+	//pinMode(OUT_PIN_BUTTON, OUTPUT); Already setup by setupMeasurement.
+	// Setup pins
+	setupMeasurement();
+	// Setup LCD
+	lcd.begin(16, 2);
+	lcd.clear();
 
 
-  // usblag initialization
-  if (Usb.Init() == -1) {
-    Serial.println("OSC did not start.");
-    Error(F("Error:"), F("USB problem!!!"));
-  }
-  delay(200);
+	// usblag initialization
+	if (Usb.Init() == -1) {
+		Serial.println("OSC did not start.");
+		Error(F("Error:"), F("USB problem!!!"));
+	}
+	delay(200);
 
-   // Start in Lagmeter mode
-   printLagMeterMenu();
-   usbMode = false;
-   prevUsbMode = false;
+	// Start in Lagmeter mode
+	printLagMeterMenu();
+	usbMode = false;
+	prevUsbMode = false;
 
 #if 0
-// Test
-  Serial.println(secsToString(0l));
-  Serial.println(secsToString(59l));
-  Serial.println(secsToString(60l));
-  Serial.println(secsToString(60l+45l));
-  Serial.println(secsToString(2l*60l+30l));
-  Serial.println(secsToString(7l*60l+10l));
-  Serial.println(secsToString(10l*60l+25l));
+	// Test
+	Serial.println(secsToString(0l));
+	Serial.println(secsToString(59l));
+	Serial.println(secsToString(60l));
+	Serial.println(secsToString(60l + 45l));
+	Serial.println(secsToString(2l * 60l + 30l));
+	Serial.println(secsToString(7l * 60l + 10l));
+	Serial.println(secsToString(10l * 60l + 25l));
 
-  Serial.println(longToString(0l));
-  Serial.println(longToString(1l));
-  Serial.println(longToString(999l));
-  Serial.println(longToString(1000l));
-  Serial.println(longToString(999000l));
-  Serial.println(longToString(999999l));
-  Serial.println(longToString(1000000l));
-  Serial.println(longToString(99000000l));
-  Serial.println(longToString(99999999l));
-  Serial.println(longToString(100000000l));
+	Serial.println(longToString(0l));
+	Serial.println(longToString(1l));
+	Serial.println(longToString(999l));
+	Serial.println(longToString(1000l));
+	Serial.println(longToString(999000l));
+	Serial.println(longToString(999999l));
+	Serial.println(longToString(1000000l));
+	Serial.println(longToString(99000000l));
+	Serial.println(longToString(99999999l));
+	Serial.println(longToString(100000000l));
 #endif
 }
 
 
 // Checks for keypresses for LagMeter mode.
 void handleLagMeter() {
-  // Check to print the menu
-  if(abortAll) {
-    printLagMeterMenu();
-    abortAll = false;
-  }
+	// Check to print the menu
+	if (abortAll) {
+		printLagMeterMenu();
+		abortAll = false;
+	}
 
-  // Handle user input
-  int key = getLcdKey();
-  switch(key) {
-    case KEY_TEST_PHOTO_BUTTON:
-	    testPhotoSensor();
-      break;
-    case KEY_MEASURE_PHOTO:
-      measurePhotoSensor();
-      break;
-    case KEY_MEASURE_SVGA:
-      measureAD2();
-      break;
-    case KEY_MEASURE_SVGA_TO_PHOTO:
-      measureSvgaToMonitor();
-      break;
-    case KEY_MEASURE_MIN_TIME:
-      measureMinPressTime();
-      break;
-  }
+	// Handle user input
+	int key = getLcdKey();
+	switch (key) {
+	case KEY_TEST_PHOTO_BUTTON:
+		testPhotoSensor();
+		break;
+	case KEY_MEASURE_PHOTO:
+		measurePhotoSensor();
+		break;
+	case KEY_MEASURE_SVGA:
+		measureAD2();
+		break;
+	case KEY_MEASURE_SVGA_TO_PHOTO:
+		measureSvgaToMonitor();
+		break;
+	case KEY_MEASURE_MIN_TIME:
+		measureMinPressTime();
+		break;
+	}
 }
 
 
 // isUsbAbort: returns true if any key is pressed or
 // if usbMode is false and sets 'abortAll' to true.
 bool isUsbAbort() {
-  if(!usbMode)
-    abortAll = true;
-  return isAbort();
+	if (!usbMode)
+		abortAll = true;
+	return isAbort();
 }
 
 
 // ON/OFF of the button and showing the result.
 // I.e. a quick test to see if the connection is OK.
 void usblagTestButton() {
-  lcd.clear();
-  lcd.print(F("Button:"));
-  int outpValue = LOW;
-  while(!abortAll) {
-    // Stimulate button
-    outpValue = ~outpValue;
-    digitalWrite(OUT_PIN_BUTTON, outpValue);
+	lcd.clear();
+	lcd.print(F("Button:"));
+	int outpValue = LOW;
+	while (!abortAll) {
+		// Stimulate button
+		outpValue = ~outpValue;
+		digitalWrite(OUT_PIN_BUTTON, outpValue);
 
-    // Print button state
-    lcd.setCursor(8, 0);
-    if(outpValue)
-      lcd.print(F("ON "));
-    else
-      lcd.print(F("OFF"));
+		// Print button state
+		lcd.setCursor(8, 0);
+		if (outpValue)
+			lcd.print(F("ON "));
+		else
+			lcd.print(F("OFF"));
 
-    // Wait for some time
-    for(int i=0; i<1500; i++) {
-      delay(1); // wait 1ms
-      Usb.Task();
-      printJoystickButtonChanged();
-      if(isUsbAbort()) break;
-    }
+		// Wait for some time
+		for (int i = 0; i < 1500; i++) {
+			delay(1); // wait 1ms
+			Usb.Task();
+			printJoystickButtonChanged();
+			if (isUsbAbort()) break;
+		}
 
-  }
-  // Button off
-  digitalWrite(OUT_PIN_BUTTON, LOW);
+	}
+	// Button off
+	digitalWrite(OUT_PIN_BUTTON, LOW);
 }
 
 
 // Measures the usb lag. I.e. the time from button press to received USB reaction.
 // Returns the time in milli seconds.
 double measureUsbLag() {
-  // Handle USB a few times just in case
-  Usb.Task();
-  Usb.Task();
-  Usb.Task();
-  Usb.Task();
+	// Handle USB a few times just in case
+	Usb.Task();
+	Usb.Task();
+	Usb.Task();
+	Usb.Task();
 
-  // "Press" button
-  joystickButtonPressed = false;
-  digitalWrite(OUT_PIN_BUTTON, HIGH);
+	// "Press" button
+	joystickButtonPressed = false;
+	digitalWrite(OUT_PIN_BUTTON, HIGH);
 
-  // Wait until button press
-  long startTime = micros();
-  long diffTime = 0;
-  while(!joystickButtonPressed) {
-    Usb.Task();
-    if(isUsbAbort()) return;
-    // Stop measuring
-    long stopTime = micros();
-    diffTime = stopTime - startTime;
+	// Wait until button press
+	long startTime = micros();
+	long diffTime = 0;
+	while (!joystickButtonPressed) {
+		Usb.Task();
+		if (isUsbAbort()) return;
+		// Stop measuring
+		long stopTime = micros();
+		diffTime = stopTime - startTime;
 
-    // Check if too long
-    if(diffTime > 1000000l) {
-      // More than a second
-      Error(F("Error:"), F("No response!"));
-      return 0;
-    }
-  }
+		// Check if too long
+		if (diffTime > 1000000l) {
+			// More than a second
+			Error(F("Error:"), F("No response!"));
+			return 0;
+		}
+	}
 
-  // Round
-  double time = diffTime/1000.0; // ms
-  return time;
+	// Round
+	double time = diffTime / 1000.0; // ms
+	return time;
 }
 
 
@@ -303,237 +303,233 @@ The values are rounded when displayed:
 1.551 -> "1.6"
 1.56  -> "1.6"
 */
-void usblagMeasure()
-{
-  char buffer[10];
+void usblagMeasure() {
+	char buffer[10];
 
-  // Show test title
-  lcd.clear();
-  lcd.print(F("Test: USB "));
-  if(xboxMode) {
-    lcd.print(F("xbox"));
-  }
-  else {
-    lcd.print(usedPollInterval);
-    lcd.print(F("ms"));
-  }
-  waitMs(TITLE_TIME); if(isUsbAbort()) return;
+	// Show test title
+	lcd.clear();
+	lcd.print(F("Test: USB "));
+	if (xboxMode) {
+		lcd.print(F("xbox"));
+	}
+	else {
+		lcd.print(usedPollInterval);
+		lcd.print(F("ms"));
+	}
+	waitMs(TITLE_TIME); if (isUsbAbort()) return;
 
-  // Initialize
-  digitalWrite(OUT_PIN_BUTTON, LOW);
+	// Initialize
+	digitalWrite(OUT_PIN_BUTTON, LOW);
 
-  // Calibrate, i.e. wait a small moment
-  lcd.clear();
-  lcd.print(F("Calibr. Don't"));
-  lcd.setCursor(0, 1);
-  lcd.print(F("touch joystick."));
+	// Calibrate, i.e. wait a small moment
+	lcd.clear();
+	lcd.print(F("Calibr. Don't"));
+	lcd.setCursor(0, 1);
+	lcd.print(F("touch joystick."));
 
-  setModeCalib(true);
-  bool output = true;
-  for (int i = 0; i < 1000; i++)
-  {
-     // We need to stimulate the button otherwise nothing is reported
-    digitalWrite(OUT_PIN_BUTTON, output);
-    output = !output;
-    Usb.Task();
-    waitMs(2);
-    if(isUsbAbort())
-    {
-      setModeCalib(false);
-      return;
-    }
-  }
-  digitalWrite(OUT_PIN_BUTTON, LOW);
-  waitMs(100);
-  Usb.Task();
-  Usb.Task();
-  setModeCalib(false);
+	setModeCalib(true);
+	bool output = true;
+	for (int i = 0; i < 1000; i++) {
+		// We need to stimulate the button otherwise nothing is reported
+		digitalWrite(OUT_PIN_BUTTON, output);
+		output = !output;
+		Usb.Task();
+		waitMs(2);
+		if (isUsbAbort()) {
+			setModeCalib(false);
+			return;
+		}
+	}
+	digitalWrite(OUT_PIN_BUTTON, LOW);
+	waitMs(100);
+	Usb.Task();
+	Usb.Task();
+	setModeCalib(false);
 
-  lcd.clear();
-  struct MinMaxFloat timeRange = {100000 /* 100 sec */, 0};
-  float avg = 0.0;
-  for(int i=1; i<=COUNT_CYCLES; i++) {
-    // Print
-    lcd.setCursor(0,0);
-    Usb.Task();
-    lcd.print(i);
-    Usb.Task();
-    lcd.print(F("/"));
-    Usb.Task();
-    lcd.print(COUNT_CYCLES);
-    Usb.Task();
-    lcd.print(F(": "));
-    Usb.Task();
+	lcd.clear();
+	struct MinMaxFloat timeRange = { 100000 /* 100 sec */, 0 };
+	float avg = 0.0;
+	for (int i = 1; i <= COUNT_CYCLES; i++) {
+		// Print
+		lcd.setCursor(0, 0);
+		Usb.Task();
+		lcd.print(i);
+		Usb.Task();
+		lcd.print(F("/"));
+		Usb.Task();
+		lcd.print(COUNT_CYCLES);
+		Usb.Task();
+		lcd.print(F(": "));
+		Usb.Task();
 
-    // Wait a random time to make sure we really get different results.
-    uint8_t waitRnd = random(70, 150);
-    for(uint8_t i=0; i<waitRnd; i++) {
-      delay(1);
-      if(isUsbAbort()) return;
-      Usb.Task();
-    }
+		// Wait a random time to make sure we really get different results.
+		uint8_t waitRnd = random(70, 150);
+		for (uint8_t i = 0; i < waitRnd; i++) {
+			delay(1);
+			if (isUsbAbort()) return;
+			Usb.Task();
+		}
 
-    // Measure lag
-    double time = measureUsbLag();  // in 0.1 ms resolution
-    if(isUsbAbort()) return;
+		// Measure lag
+		double time = measureUsbLag();  // in 0.1 ms resolution
+		if (isUsbAbort()) return;
 
 #if 0
-  for(uint16_t i=0;i<1000;i++)
-  {
-    uint32_t t1 = micros();
-    uint32_t t2 = micros();
-    uint32_t t3;
-    for (uint16_t k = random(0, 999); k < 1000; k++)
-      t3 = micros();
-    Serial.println(t1);
-    Serial.println(t2);
-    Serial.println(t3);
-  }
+		for (uint16_t i = 0;i < 1000;i++) {
+			uint32_t t1 = micros();
+			uint32_t t2 = micros();
+			uint32_t t3;
+			for (uint16_t k = random(0, 999); k < 1000; k++)
+				t3 = micros();
+			Serial.println(t1);
+			Serial.println(t2);
+			Serial.println(t3);
+		}
 #endif
 
-    // Output result:
-    dtostrf(time, 1, 1, buffer);
-    lcd.print(buffer);
-    Usb.Task();
-    lcd.print(F("ms     "));
-    Usb.Task();
+		// Output result:
+		dtostrf(time, 1, 1, buffer);
+		lcd.print(buffer);
+		Usb.Task();
+		lcd.print(F("ms     "));
+		Usb.Task();
 
-    // Calculate max/min.
-    if(time > timeRange.max)
-      timeRange.max = time;
-    if(time < timeRange.min)
-      timeRange.min = time;
+		// Calculate max/min.
+		if (time > timeRange.max)
+			timeRange.max = time;
+		if (time < timeRange.min)
+			timeRange.min = time;
 
-    // Print min/max result
-    lcd.setCursor(4, 1);
-    if(timeRange.min != timeRange.max) {
-      dtostrf(timeRange.min, 1, 1, buffer);
-      lcd.print(buffer);
-      lcd.print(F("-"));
-    }
-    dtostrf(timeRange.max, 1, 1, buffer);
-    lcd.print(buffer);
-    lcd.print(F("ms     "));
+		// Print min/max result
+		lcd.setCursor(4, 1);
+		if (timeRange.min != timeRange.max) {
+			dtostrf(timeRange.min, 1, 1, buffer);
+			lcd.print(buffer);
+			lcd.print(F("-"));
+		}
+		dtostrf(timeRange.max, 1, 1, buffer);
+		lcd.print(buffer);
+		lcd.print(F("ms     "));
 
-    // Calculate average
-    avg += time;
+		// Calculate average
+		avg += time;
 
-    // "Release" button
-    digitalWrite(OUT_PIN_BUTTON, LOW);
+		// "Release" button
+		digitalWrite(OUT_PIN_BUTTON, LOW);
 
-    // Wait until no button press
-    long startTime = millis();
-    while(joystickButtonPressed) {
-      //waitMs(1);
-      if(isUsbAbort()) return;
-      // Check if too long
-      long stopTime = millis();
-      long diffTime = stopTime - startTime;
-      if(diffTime > 1000) {
-        // More than a second
-        Error(F("Error:"), F("No response."));
-        return;
-      }
-      Usb.Task();
-    }
-  }
+		// Wait until no button press
+		long startTime = millis();
+		while (joystickButtonPressed) {
+			//waitMs(1);
+			if (isUsbAbort()) return;
+			// Check if too long
+			long stopTime = millis();
+			long diffTime = stopTime - startTime;
+			if (diffTime > 1000) {
+				// More than a second
+				Error(F("Error:"), F("No response."));
+				return;
+			}
+			Usb.Task();
+		}
+	}
 
-  // Print average:
-  avg /= COUNT_CYCLES;
-  lcd.setCursor(0,0);
-  lcd.print(F("Avg lag: "));
-  dtostrf(avg, 1, 1, buffer);
-  lcd.print(buffer);
-  lcd.print(F("ms     "));
+	// Print average:
+	avg /= COUNT_CYCLES;
+	lcd.setCursor(0, 0);
+	lcd.print(F("Avg lag: "));
+	dtostrf(avg, 1, 1, buffer);
+	lcd.print(buffer);
+	lcd.print(F("ms     "));
 
-  // Wait until keypress
-  while(!isUsbAbort()) {
-    delay(1);
-    Usb.Task();
-  }
+	// Wait until keypress
+	while (!isUsbAbort()) {
+		delay(1);
+		Usb.Task();
+	}
 }
 
 // Checks for keypresses for usblag mode.
 void handleUsblag() {
-  // Prints patterns if joystick button has changed
-  printJoystickButtonChanged();
+	// Prints patterns if joystick button has changed
+	printJoystickButtonChanged();
 
-  // Handle user input
-  int key = getLcdKey();
-  switch(key) {
-    case KEY_USBLAG_TEST_BUTTON:
-      // ON/OFF of the button and showing the result. I.e. a quick test to see if the connection is OK.
-      usblagTestButton();
-      printUsblagMenu();
-      joystickButtonChanged = false;
-      abortAll = false;
-      break;
+	// Handle user input
+	int key = getLcdKey();
+	switch (key) {
+	case KEY_USBLAG_TEST_BUTTON:
+		// ON/OFF of the button and showing the result. I.e. a quick test to see if the connection is OK.
+		usblagTestButton();
+		printUsblagMenu();
+		joystickButtonChanged = false;
+		abortAll = false;
+		break;
 
-    case KEY_USBLAG_MEASURE:
-      // Start testing usb device measurement
-      usblagMeasure();
-      printUsblagMenu();
-      joystickButtonChanged = false;
-      abortAll = false;
-      break;
+	case KEY_USBLAG_MEASURE:
+		// Start testing usb device measurement
+		usblagMeasure();
+		printUsblagMenu();
+		joystickButtonChanged = false;
+		abortAll = false;
+		break;
 
-    case KEY_USBLAG_MEASURE_1MS:
-      if(xboxMode) {
-        // Not available in xbox mode
-          lcd.clear();
-          lcd.print(F("Not available."));
-          while(!isUsbAbort())
-            delay(100);
-          printUsblagMenu();
-          joystickButtonChanged = false;
-          abortAll = false;
-      }
-      else {
-        // Save poll intervall
-        int bakPollInterval = usedPollInterval;
-        // Start testing usb device measurement
-        setPollInterval(1); // Use 1ms poll interval
-        // Not all numbers work. Seems that numbers from 1 to 10 (including) do work.
-        usblagMeasure();
-        printUsblagMenu();
-        joystickButtonChanged = false;
-        abortAll = false;
-        // Restore poll interval
-        setPollInterval(bakPollInterval);
-      }
-      break;
-  }
+	case KEY_USBLAG_MEASURE_1MS:
+		if (xboxMode) {
+			// Not available in xbox mode
+			lcd.clear();
+			lcd.print(F("Not available."));
+			while (!isUsbAbort())
+				delay(100);
+			printUsblagMenu();
+			joystickButtonChanged = false;
+			abortAll = false;
+		}
+		else {
+			// Save poll intervall
+			int bakPollInterval = usedPollInterval;
+			// Start testing usb device measurement
+			setPollInterval(1); // Use 1ms poll interval
+			// Not all numbers work. Seems that numbers from 1 to 10 (including) do work.
+			usblagMeasure();
+			printUsblagMenu();
+			joystickButtonChanged = false;
+			abortAll = false;
+			// Restore poll interval
+			setPollInterval(bakPollInterval);
+		}
+		break;
+	}
 }
 
 
 // MAIN LOOP
 void loop() {
 
-  // Check if main mode changed.
-  if(usbMode != prevUsbMode) {
-    prevUsbMode = usbMode;
-    if(usbMode) {
-      // Usblag mode
-      printUsblagMenu();
-    }
-    else {
-      // Reset
-      asm( "   jmp 0");
-    }
-  }
+	// Check if main mode changed.
+	if (usbMode != prevUsbMode) {
+		prevUsbMode = usbMode;
+		if (usbMode) {
+			// Usblag mode
+			printUsblagMenu();
+		}
+		else {
+			// Reset
+			asm("   jmp 0");
+		}
+	}
 
 #if 01
-  // Handle mode
-  if(usbMode) {
-    // Usblag mode
-    handleUsblag();
-   }
-  else {
-    // Lagmeter mode
-    handleLagMeter();
-  }
+	// Handle mode
+	if (usbMode) {
+		// Usblag mode
+		handleUsblag();
+	}
+	else {
+		// Lagmeter mode
+		handleLagMeter();
+	}
 #endif
 
-  // Handle USB
-  Usb.Task();
+	// Handle USB
+	Usb.Task();
 }
